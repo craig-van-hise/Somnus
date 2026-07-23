@@ -18,8 +18,14 @@
 ├── package.json
 ├── project_tree.txt
 ├── public
+|  ├── Nature Sounds Audio
+|  |  ├── Ocean Waves
+|  |  |  └── ocean.mp3
+|  |  └── Rain
+|  |     └── rain.wav
 |  └── assets
-|     └── fdn-reverb-worklet.js
+|     ├── fdn-reverb-worklet.js
+|     └── silence.wav
 ├── src
 |  ├── App.jsx
 |  ├── components
@@ -41,15 +47,41 @@
 |  |  └── assetLoader.js
 |  └── test
 |     ├── phase1.test.jsx
+|     ├── phase1_clock_integrity.test.jsx
+|     ├── phase1_custom_fade.test.jsx
+|     ├── phase1_decoding.test.jsx
+|     ├── phase1_extension.test.jsx
+|     ├── phase1_hydration.test.jsx
+|     ├── phase1_loop.test.jsx
+|     ├── phase1_lpf_floor.test.js
+|     ├── phase1_lpf_math.test.js
 |     ├── phase2.test.js
+|     ├── phase2_app_bridge.test.jsx
+|     ├── phase2_buffer_insetting.test.jsx
+|     ├── phase2_gentle_fade.test.jsx
+|     ├── phase2_lifecycle.test.jsx
+|     ├── phase2_pretick.test.jsx
+|     ├── phase2_timing.test.jsx
+|     ├── phase2_vite_config.test.js
 |     ├── phase3.test.jsx
+|     ├── phase3_buffers.test.jsx
+|     ├── phase3_cicd_pipeline.test.js
+|     ├── phase3_persistence.test.jsx
+|     ├── phase3_pretick.test.jsx
+|     ├── phase3_reverb_routing.test.jsx
+|     ├── phase3_url_encoding.test.jsx
 |     ├── phase4.test.js
+|     ├── phase4_prp17.test.jsx
 |     ├── phase5.test.js
+|     ├── phase5_prp17.test.jsx
 |     ├── phase6.test.js
+|     ├── prp18_phase1.test.js
+|     ├── prp18_phase2.test.jsx
+|     ├── prp18_phase3.test.js
 |     └── setup.js
 └── vite.config.js
 
-directory: 489 file: 4244
+directory: 493 file: 4283
 
 ignored: directory (72)
 

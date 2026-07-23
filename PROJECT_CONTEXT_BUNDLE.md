@@ -20,8 +20,14 @@
 ├── package.json
 ├── project_tree.txt
 ├── public
+|  ├── Nature Sounds Audio
+|  |  ├── Ocean Waves
+|  |  |  └── ocean.mp3
+|  |  └── Rain
+|  |     └── rain.wav
 |  └── assets
-|     └── fdn-reverb-worklet.js
+|     ├── fdn-reverb-worklet.js
+|     └── silence.wav
 ├── src
 |  ├── App.jsx
 |  ├── components
@@ -43,15 +49,41 @@
 |  |  └── assetLoader.js
 |  └── test
 |     ├── phase1.test.jsx
+|     ├── phase1_clock_integrity.test.jsx
+|     ├── phase1_custom_fade.test.jsx
+|     ├── phase1_decoding.test.jsx
+|     ├── phase1_extension.test.jsx
+|     ├── phase1_hydration.test.jsx
+|     ├── phase1_loop.test.jsx
+|     ├── phase1_lpf_floor.test.js
+|     ├── phase1_lpf_math.test.js
 |     ├── phase2.test.js
+|     ├── phase2_app_bridge.test.jsx
+|     ├── phase2_buffer_insetting.test.jsx
+|     ├── phase2_gentle_fade.test.jsx
+|     ├── phase2_lifecycle.test.jsx
+|     ├── phase2_pretick.test.jsx
+|     ├── phase2_timing.test.jsx
+|     ├── phase2_vite_config.test.js
 |     ├── phase3.test.jsx
+|     ├── phase3_buffers.test.jsx
+|     ├── phase3_cicd_pipeline.test.js
+|     ├── phase3_persistence.test.jsx
+|     ├── phase3_pretick.test.jsx
+|     ├── phase3_reverb_routing.test.jsx
+|     ├── phase3_url_encoding.test.jsx
 |     ├── phase4.test.js
+|     ├── phase4_prp17.test.jsx
 |     ├── phase5.test.js
+|     ├── phase5_prp17.test.jsx
 |     ├── phase6.test.js
+|     ├── prp18_phase1.test.js
+|     ├── prp18_phase2.test.jsx
+|     ├── prp18_phase3.test.js
 |     └── setup.js
 └── vite.config.js
 
-directory: 489 file: 4244
+directory: 493 file: 4283
 
 ignored: directory (72)
 
@@ -67,44 +99,49 @@ ignored: directory (72)
 /Users/vv2024/Documents/Repos - vv2024/Somnus
 ├── FAILURE_REPORT.md
 ├── Foundational Docs
-|  ├── # 1 Somnus- A Generative Sleep Music Mobile Web Application- Product Goals & Vision Document.txt
-|  ├── # 2 Somnus - Frontend & Architecture Specification Sheet- Somnus.txt
-|  ├── # 3 Somnus - Generative Sleep Music Engine- Technical Specifications.txt
-|  ├── # 4 Somnus - Software Specification Sheet- Generative Sleep Music Synthesis Engine.txt
-|  ├── # 5 Somnus - Comprehensive Engineering Specification- 2OA Sleep FDN Reverb Engine.txt
-|  ├── # Product Requirements Document- Somnus.txt
-|  └── GUI mockup.png
+│   ├── # 1 Somnus- A Generative Sleep Music Mobile Web Application- Product Goals & Vision Document.txt
+│   ├── # 2 Somnus - Frontend & Architecture Specification Sheet- Somnus.txt
+│   ├── # 3 Somnus - Generative Sleep Music Engine- Technical Specifications.txt
+│   ├── # 4 Somnus - Software Specification Sheet- Generative Sleep Music Synthesis Engine.txt
+│   ├── # 5 Somnus - Comprehensive Engineering Specification- 2OA Sleep FDN Reverb Engine.txt
+│   ├── # Product Requirements Document- Somnus.txt
+│   └── GUI mockup.png
 ├── PROJECT_CONTEXT_BUNDLE.md
 ├── PROJECT_STATE.md
 ├── PRPs
-|  ├── # 0.md ... # 16.md
+│   ├── # 16.md ... # 26.md
+│   └── xOlder
 ├── README.md
 ├── index.html
 ├── llms.txt
 ├── package.json
 ├── public
-|  └── assets
-|     └── fdn-reverb-worklet.js
+│   ├── Nature Sounds Audio
+│   │   ├── Ocean Waves
+│   │   └── Rain
+│   └── assets
+│       ├── fdn-reverb-worklet.js
+│       └── silence.wav
 ├── src
-|  ├── App.jsx
-|  ├── components
-|  |  ├── AudioSuspendedOverlay.jsx
-|  |  ├── PlayButton.jsx
-|  |  ├── SettingsModal.jsx
-|  |  └── Sliders.jsx
-|  ├── context
-|  |  └── AppContext.jsx
-|  ├── engine
-|  |  ├── GenerativeAudioController.js
-|  |  ├── fdnReverbMath.js
-|  |  ├── lifecycleRampEngine.js
-|  |  ├── parameterCalculator.js
-|  |  └── pitchEngine.js
-|  ├── index.css
-|  ├── main.jsx
-|  ├── services
-|  |  └── assetLoader.js
-|  └── test
+│   ├── App.jsx
+│   ├── components
+│   │   ├── AudioSuspendedOverlay.jsx
+│   │   ├── PlayButton.jsx
+│   │   ├── SettingsModal.jsx
+│   │   └── Sliders.jsx
+│   ├── context
+│   │   └── AppContext.jsx
+│   ├── engine
+│   │   ├── GenerativeAudioController.js
+│   │   ├── fdnReverbMath.js
+│   │   ├── lifecycleRampEngine.js
+│   │   ├── parameterCalculator.js
+│   │   └── pitchEngine.js
+│   ├── index.css
+│   ├── main.jsx
+│   ├── services
+│   │   └── assetLoader.js
+│   └── test
 └── vite.config.js
 ```
 
@@ -115,25 +152,29 @@ ignored: directory (72)
 * **Testing**: Vitest (v3.0.4) with JSDOM environment.
 
 ## 3. Current System Capabilities
-* **Frontend GUI Skeleton**: Responsive glassmorphic UI with session controls (Play/Pause, Reset) and parameter sliders.
-* **State Management**: React AppContext holding visual parameters with 100ms debouncing.
-* **Mathematical & Pitch Engine**: Derives BPM/volume ramp targets and pentatonic pitch selections.
+* **Frontend GUI Skeleton**: Responsive glassmorphic UI with session controls ("Start Engine" / Pause, Reset), custom full-page scrollable Settings modal for iOS Safari, and touch-optimized slider handles (28px touch target with `touch-action: pan-y`).
+* **State Management**: React AppContext holding visual and audio configuration parameters with a 100ms slider debouncing window.
+* **Mathematical & Pitch Engine**: Derives BPM/volume ramp targets and pentatonic pitch selections based on sleep depth metrics.
 * **3-Layer Synthesis Topography**: Instantiates Layer 1 Drone, Layer 2 Harmonic, and Layer 3 Melodic synths routed through `reverbInputBus`.
+* **Nature Sound Ambience**: Incorporates dual-channel looped crossfading playbacks of Rain and Ocean Waves.
+* **Base Path Awareness**: All preloads and worklets use the Vite base path prefix (`/Somnus/`) to support reliable assets on GitHub Pages.
 
 ---
 
-## 4. Current Status: Development Paused (Sub-MVP State)
-Development has been explicitly paused. While unit tests pass and basic audio routing functions without crashing, the audio generation and spatial processing have not reached MVP standards.
+## 4. Current Work-in-Progress & iOS Safari Issues
+We are presently debugging mobile compatibility issues, specifically for iOS Safari (iPhone) when running in production on GitHub Pages:
 
-### Unresolved Audio Engine & Neurological Design Issues:
-1. **Bass Notes Stagnation**: Bass / drone notes are static and not progressing or moving as intended by the generative sleep engine specifications.
-2. **Reverb Spatiality & Room Size**: The FDN reverb tail output remains perceptually small/dry rather than providing the intended massive, 100% wet, diffuse far-field acoustic space.
-3. **Unintended Spatial Panning / Movement**: Auditory elements are perceived as moving or panning across the stereo image. This violates the core Neurological Design Principle of Somnus (spatial movement activates the brain's orienting reflex and cortical hyperarousal, inhibiting Slow-Wave Sleep induction).
+1. **"Start Engine" Activation Lag/Freeze**:
+   * **Symptom**: Pressing the "Start Engine" button locks up/hangs for a long duration with no UI indicator before audio starts or fails.
+   * **Cause**: Tone.js's internal promise resolution structure (`Tone.loaded()`) hangs on iOS Safari when preloading audio files or while the browser's audio hardware context initializes under restrictive user gesture scopes.
 
-### Next Steps Upon Resuming Development:
-* Audit synthesis layer scheduling and pitch engine transitions for low frequencies.
-* Re-evaluate the 2OA FDN Reverb AudioWorklet parameter mapping and spatialization pipeline.
-* Enforce strict static monophonic/centered spatial balance across all audio channels.
+2. **Nature Sounds Failing to Play**:
+   * **Symptom**: In the production web version, the Rain and Ocean waves sounds fail to play.
+   * **Cause**: iOS Safari has strict codec and loading requirements. Relative path routing or synchronous resource fetching of large wav/mp3 assets inside Tone.js's `Tone.Player` fails or falls back without resolving the promise on mobile.
+
+3. **Background/Lock Screen Audio Interruption**:
+   * **Symptom**: Audio cuts off instantly as soon as the iPhone screen locks or the browser tab goes into the background.
+   * **Cause**: iOS Safari aggressively suspends active web audio contexts when tab visibility changes or device lock is triggered. The background keep-alive mechanism (e.g. dummy silent `<audio>` playback loops and `visibilitychange` listeners) needs alignment with native audio sessions.
 
 
 ### FILE: README.md
