@@ -10,6 +10,11 @@ export const PlayButton = () => {
     if (isLoading) return;
     setAudioSuspended(false);
 
+    const currentStatus = sessionStatus;
+    if (currentStatus === 'standby') {
+      setSessionStatus('starting');
+    }
+
     // Explicit Audio Initialization directive:
     // Primary Play button handler MUST synchronously resume native AudioContext and call await Tone.start()
     try {
@@ -28,7 +33,7 @@ export const PlayButton = () => {
       console.warn('Tone.start() warning:', e);
     }
 
-    if (sessionStatus === 'active') {
+    if (currentStatus === 'active') {
       // Pause active session
       audioController.pauseSession();
       setSessionStatus('paused');
@@ -56,6 +61,8 @@ export const PlayButton = () => {
       buttonText = 'SESSION ACTIVE';
     } else if (sessionStatus === 'paused') {
       buttonText = 'SESSION PAUSED';
+    } else if (sessionStatus === 'starting') {
+      buttonText = 'LOADING ENGINE...';
     } else {
       buttonText = 'START ENGINE';
     }
@@ -74,6 +81,8 @@ export const PlayButton = () => {
         className={`relative group px-8 py-5 rounded-full font-sans tracking-widest text-xs font-semibold transition-all duration-300 shadow-xl ${
           isLoading
             ? 'bg-white/5 border border-white/10 text-white/40 cursor-not-allowed animate-pulse'
+            : sessionStatus === 'starting'
+            ? 'bg-indigo-500/30 border border-indigo-400/50 text-indigo-200 shadow-indigo-500/40 animate-pulse scale-105 cursor-wait'
             : sessionStatus === 'active'
             ? 'bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 shadow-emerald-500/20 hover:bg-emerald-500/30 active:scale-95'
             : sessionStatus === 'paused'
@@ -83,13 +92,19 @@ export const PlayButton = () => {
       >
         <div className="flex items-center space-x-3">
           <span className="relative flex h-3 w-3">
-            {sessionStatus === 'active' && (
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            {(sessionStatus === 'active' || sessionStatus === 'starting') && (
+              <span
+                className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                  sessionStatus === 'starting' ? 'bg-indigo-400' : 'bg-emerald-400'
+                }`}
+              ></span>
             )}
             <span
               className={`relative inline-flex rounded-full h-3 w-3 ${
                 isLoading
                   ? 'bg-amber-400'
+                  : sessionStatus === 'starting'
+                  ? 'bg-indigo-400'
                   : sessionStatus === 'active'
                   ? 'bg-emerald-400'
                   : sessionStatus === 'paused'

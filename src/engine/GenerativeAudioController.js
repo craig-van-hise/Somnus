@@ -1,5 +1,6 @@
 import * as Tone from 'tone';
 import { calculateEntrainmentFrequency, calculateLpfCutoff } from './lifecycleRampEngine';
+import { globalAssetCache } from '../services/assetLoader';
 
 // Resolve Vite base path for GitHub Pages deployment
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL)
@@ -233,56 +234,51 @@ export class GenerativeAudioController {
       this.ch3Noise = { connect: () => {}, start: () => {}, stop: () => {} };
     }
 
-    // 8. Channel 4: Nature Ambience Submixer (CrossFade + Rain/Ocean Players)
-    const rainUrl = `${BASE}Nature%20Sounds%20Audio/Rain/rain.wav`;
-    const oceanUrl = `${BASE}Nature%20Sounds%20Audio/Ocean%20Waves/ocean.mp3`;
+    // 8. Channel 4: Nature Ambience Submixer (Zero-latency decoded ArrayBuffers)
     try {
-      fetch(rainUrl).catch(() => {});
-      this.rainPlayer = new Tone.Player({
-        url: rainUrl,
-        loop: true,
-        fade: 2.0,
-      });
-      this.safeLoadBuffer(rainUrl).then((rainBuffer) => {
-        if (rainBuffer && this.rainPlayer) {
-          this.rainPlayer.loopStart = 2.0;
-          this.rainPlayer.loopEnd = rainBuffer.duration - 2.0;
+      if (globalAssetCache.rainBuffer && nativeContext && typeof nativeContext.decodeAudioData === 'function') {
+        const rainData = await nativeContext.decodeAudioData(globalAssetCache.rainBuffer.slice(0));
+        const toneRainBuffer = new Tone.ToneAudioBuffer(rainData);
+        this.rainPlayer = new Tone.Player({
+          url: toneRainBuffer,
+          loop: true,
+          fade: 2.0,
+        });
+        this.rainPlayer.loopStart = 2.0;
+        this.rainPlayer.loopEnd = Math.max(2.1, toneRainBuffer.duration - 2.0);
+      } else {
+        try {
+          this.rainPlayer = new Tone.Player({ loop: true, fade: 2.0 });
+        } catch (_) {
+          this.rainPlayer = { loop: true, fade: 2.0, connect: () => {}, start: () => {}, stop: () => {} };
         }
-      }).catch(() => {});
+      }
     } catch (e) {
+      console.warn("Rain decode error", e);
       this.rainPlayer = { loop: true, fade: 2.0, connect: () => {}, start: () => {}, stop: () => {} };
-      this.safeLoadBuffer(rainUrl).then((rainBuffer) => {
-        if (rainBuffer && this.rainPlayer) {
-          this.rainPlayer.loopStart = 2.0;
-          this.rainPlayer.loopEnd = rainBuffer.duration - 2.0;
-        }
-      }).catch(() => {});
     }
 
     try {
-      try {
-        new Tone.Player({ url: `${BASE}Nature%20Sounds%20Audio/Ocean%20Waves/ocean.wav` });
-      } catch (e) {}
-      fetch(oceanUrl).catch(() => {});
-      this.wavesPlayer = new Tone.Player({
-        url: oceanUrl,
-        loop: true,
-        fade: 2.0,
-      });
-      this.safeLoadBuffer(oceanUrl).then((wavesBuffer) => {
-        if (wavesBuffer && this.wavesPlayer) {
-          this.wavesPlayer.loopStart = 2.0;
-          this.wavesPlayer.loopEnd = wavesBuffer.duration - 2.0;
+      if (globalAssetCache.oceanBuffer && nativeContext && typeof nativeContext.decodeAudioData === 'function') {
+        const oceanData = await nativeContext.decodeAudioData(globalAssetCache.oceanBuffer.slice(0));
+        const toneOceanBuffer = new Tone.ToneAudioBuffer(oceanData);
+        this.wavesPlayer = new Tone.Player({
+          url: toneOceanBuffer,
+          loop: true,
+          fade: 2.0,
+        });
+        this.wavesPlayer.loopStart = 2.0;
+        this.wavesPlayer.loopEnd = Math.max(2.1, toneOceanBuffer.duration - 2.0);
+      } else {
+        try {
+          this.wavesPlayer = new Tone.Player({ loop: true, fade: 2.0 });
+        } catch (_) {
+          this.wavesPlayer = { loop: true, fade: 2.0, connect: () => {}, start: () => {}, stop: () => {} };
         }
-      }).catch(() => {});
+      }
     } catch (e) {
+      console.warn("Ocean decode error", e);
       this.wavesPlayer = { loop: true, fade: 2.0, connect: () => {}, start: () => {}, stop: () => {} };
-      this.safeLoadBuffer(oceanUrl).then((wavesBuffer) => {
-        if (wavesBuffer && this.wavesPlayer) {
-          this.wavesPlayer.loopStart = 2.0;
-          this.wavesPlayer.loopEnd = wavesBuffer.duration - 2.0;
-        }
-      }).catch(() => {});
     }
 
     try {
@@ -334,21 +330,6 @@ export class GenerativeAudioController {
       this.layer3Synth = { connect: () => {}, triggerAttackRelease: () => {}, releaseAll: () => {} };
     }
 
-
-    try {
-      if (Tone && typeof Tone.loaded === 'function') {
-        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Tone.loaded timeout')), 3000));
-        await Promise.race([Tone.loaded(), timeout]);
-      }
-    } catch (e) {
-      console.warn('Tone.loaded() wait error:', e);
-      if (this.rainPlayer) {
-        try { this.rainPlayer.loaded = false; } catch (_) { Object.defineProperty(this.rainPlayer, 'loaded', { value: false, writable: true, configurable: true }); }
-      }
-      if (this.wavesPlayer) {
-        try { this.wavesPlayer.loaded = false; } catch (_) { Object.defineProperty(this.wavesPlayer, 'loaded', { value: false, writable: true, configurable: true }); }
-      }
-    }
 
     this.isInitialized = true;
 
