@@ -1,0 +1,253 @@
+# Software Specification Sheet: Generative Sleep Music Synthesis Engine
+
+---
+
+## 1. System Overview & Technology Stack
+
+* 
+**Primary Framework:** `Tone.js` (latest stable release) for sample-accurate scheduling, audio routing, and envelope modulation.
+
+
+* **Environment:** Web Audio API compliant browser environments.
+* 
+**Target Architecture:** Single-page web application architecture driven by a centralized `GenerativeAudioController` managing two sub-engines (Pitch and Temporal) coupled to the `Tone.Transport` timeline.
+
+
+
+---
+
+## 2. Audio Graph & Voice Register Topography
+
+The engine must enforce strict separation between low-frequency physiological anchors and upper harmonic/textural elements to eliminate low-end interval mud and control acoustic brightness.
+
+```
+[Layer III: Melodic] ---> [Tone.Filter (Lowpass 1)] ---\
+[Layer II: Harmonic] ---> [Tone.Filter (Lowpass 2)] ----+---> [Tone.Destination]
+[Layer I: Drone]     --------------------------------/
+
+```
+
+### Layer I: Independent Drone Layer
+
+* **Synthesizer Type:** `Tone.Synth` configured with a low-brightness waveform (e.g., pure `sine` or highly attenuated `triangle`).
+* 
+**Pitch Range:** $\text{C-1}$ to $\text{C2}$.
+
+
+* **Routing:** Direct connection to master output (`Tone.Destination`) or staging bus prior to the out-of-scope global reverb module.
+
+### Layer II: Harmonic Pad/Choral Layer
+
+* **Synthesizer Type:** `Tone.PolySynth` utilizing a gentle `triangle` or soft `sine` generator.
+* 
+**Pitch Range:** $\text{C2}$ to $\text{G3}$.
+
+
+* **Routing:** Routed through a dedicated lowpass filter (`Tone.Filter`).
+
+### Layer III: Textural/Melodic Layer
+
+* **Synthesizer Type:** `Tone.Synth` or `Tone.PolySynth` utilizing warm, soft waveforms.
+* 
+**Pitch Range:** $\text{A3}$ to $\text{C5}$ (Max $\text{C6}$ for rare, low-amplitude treble accents isolated strictly within the initial phase).
+
+
+* **Routing:** Routed through a dedicated lowpass filter (`Tone.Filter`).
+
+### Global Brightness Constraints
+
+* 
+**Filtering:** Filters on Layer II and Layer III must implement a lowpass configuration.
+
+
+* 
+**Treble Attenuation:** Cutoff frequencies ($f_c$) must be clamped to prevent high-amplitude frequency components above C5. The filter must enforce a warm, non-fatiguing acoustic envelope that mimics a secure, quiet environment.
+
+
+* 
+**Vertical Acoustic Clearance:** The engine must programmatically validate that the lowest active pitch generated in Layer II maintains a minimum vertical clearance of a **Perfect 12th** (an octave + a perfect 5th) above the highest active tone in Layer I.
+
+
+
+---
+
+## 3. Parameter Mapping & Input Calculations
+
+The engine initializes dynamic variables based on two normalized floating-point UI controls ($0.0 \to 1.0$) representing Session Duration ($D$) and Current State ($S$).
+
+### Inputs
+
+* 
+$D \in [0.0, 1.0]$: Session Duration.
+
+
+* 
+$S \in [0.0, 1.0]$: Current State ($0.0 = \text{Awake}$, $1.0 = \text{Sleepy}$).
+
+
+
+### Core Calculations & Ramping Functions
+
+* 
+**Total Runtime ($T_{\text{total}}$):** 
+$$T_{\text{total}} = 30 + (90 \cdot D) \text{ minutes}$$
+
+
+
+
+
+* 
+**Sleep Onset Latency Target ($T_{\text{sol}}$):** 
+$$T_{\text{sol}} = 25 - (15 \cdot S) \text{ minutes}$$
+
+
+(Note: If the Advanced Settings Modal's Manual Toggle is checked, $T_{\text{sol}}$ is overridden directly by the user's manual slider value between $5 \to 45$ minutes ).
+
+
+* 
+**Starting Tempo ($\text{BPM}_{\text{start}}$):** 
+$$\text{BPM}_{\text{start}} = 80 - (20 \cdot S) \text{ BPM}$$
+
+
+
+
+
+* 
+**Starting Complexity ($\text{Comp}_{\text{start}}$):** 
+$$\text{Comp}_{\text{start}} = 1.0 - (0.5 \cdot S)$$
+
+
+
+
+
+
+---
+
+## 4. 4-Phase System Lifecycle Implementation
+
+The runtime architecture uses `Tone.Transport` automation curves to transition across three physical audio cycles mapped over four analytical milestones.
+
+| Phase | Time Bounds | Core Synthesis Action | Audio Engine Behavior |
+| --- | --- | --- | --- |
+| **Phase 1 & 2: Descent** | <br>$0 \to T_{\text{sol}}$ 
+
+ | Sympatho-Respiratory Coupling 
+
+ | Linear tempo deceleration from $\text{BPM}_{\text{start}}$ to $50$ BPM via `Tone.Transport.bpm.linearRampToValueAtTime(50, T_sol)`. Complexity scales down from $\text{Comp}_{\text{start}}$ toward $0\%$.
+
+ |
+| **Phase 3: Hold** | <br>$T_{\text{sol}} \to (T_{\text{total}} - 10\text{m})$ 
+
+ | Slow-Wave Sleep (SWS) Cortical Anchor 
+
+ | Melodic/rhythmic generation halts. Pitch Markov engine collapses into an absorbing state. Audio drops to a single, low-frequency fundamental root drone at a fixed $50$ BPM. System volume remains at normalized full gain.
+
+ |
+| **Phase 4: Fade** | <br>$(T_{\text{total}} - 10\text{m}) \to T_{\text{total}}$ 
+
+ | Preservation of Sleep Architecture 
+
+ | Master gain engine executes a slow, imperceptible exponential fade-out to $0\%$ volume via `Tone.Destination.volume.exponentialRampToValueAtTime(-Infinity, T_total)`. Protects user from reverse high spectral flux artifacts.
+
+ |
+
+---
+
+## 5. Algorithmic Processing Loops
+
+### A. The Dynamic Pitch Markov Chain (Layers II & III)
+
+Harmony operates on a static musical key throughout the session. Pitch selections for Layer II and Layer III pull from the state space of the Major Pentatonic scale $\{1, 2, 3, 5, 6\}$ (e.g., $\{\text{C, D, E, G, A}\}$ in C Major) via an evolving 1st-order Markov transition matrix:
+
+* 
+**High Complexity ($0 \le t < 0.25 \cdot T_{\text{sol}}$):** Probabilities are broadly distributed across all 5 degrees based on $\text{Comp}_{\text{start}}$ to provide cognitive de-arousal, maintaining heavy weights on the root ($1$) and fifth ($5$).
+
+
+* 
+**Mid Complexity ($0.25 \cdot T_{\text{sol}} \le t < 0.75 \cdot T_{\text{sol}}$):** The transition probabilities moving toward the 3rd ($3$) and 6th ($6$) degrees decline monotonically toward zero. Movement out of the 2nd ($2$) degree is heavily skewed to resolve directly to the Tonic ($1$).
+
+
+* 
+**Absorbing Sleep State ($t \ge T_{\text{sol}}$):** The matrix collapses into a single absorbing state. The transition vector for the root note reaches a fixed target:
+
+
+
+$$P(1 \to 1) = 1.0 \ (100\%)$$
+
+
+Any trailing voices in Layers II and III must resolve to the fundamental root tone and immediately stop active pattern rendering.
+
+
+
+### B. Layer I Drone Pool Evolution
+
+Layer I does not use the active Markov chain; instead, it samples from a weighted probability pitch pool evaluated on a slow asynchronous clock cycle every $8 \to 16$ seconds:
+
+* 
+**Phase 1 Pool:** Pitches allowed: $\{1, 5, 4, 2, 6\}$. Initial probability weights: Root ($1$) at $50\%$, Fifth ($5$) at $25\%$, with the remaining elements sharing the remaining $25\%$ to introduce harmonic warmth.
+
+
+* 
+**Phase 2 Pool:** Pool thins down exclusively to $\{1, 5\}$. Probability weights scale to Root ($1$) at $75\%$ and Fifth ($5$) at $25\%$.
+
+
+* 
+**Phase 3 Pool:** Pool collapses entirely to a single entry $\{1\}$ (Root) at $100\%$ probability.
+
+
+
+---
+
+## 6. Temporal Control & Synthesis Guardrails
+
+To bypass the predictive decoding networks of the primary auditory cortex, the temporal engine operates on an independent stochastic engine entirely unlinked to a rigid quantization grid.
+
+### Duration State Space Pool
+
+Notes must be selected from four explicit duration pools:
+
+* 
+**Short Duration:** $2 \to 4$ beats.
+
+
+* 
+**Medium Duration:** $8$ beats.
+
+
+* 
+**Long Duration:** $16$ beats.
+
+
+* 
+**Infinite Duration:** Continuous sustained tone.
+
+
+
+### Density Decay Schedule
+
+* 
+**Awake Initialization ($S = 0.0$):** High concentration of Short and Medium durations to capture conscious attention and disrupt analytical cognitive rumination loops.
+
+
+* 
+**Transition Phase ($0 < t < T_{\text{sol}}$):** The probability of selecting a Short duration systematically drops to $0\%$. The pool becomes dominated by Medium and Long values, elongating musical phrases to guide breathing cycles downward.
+
+
+* 
+**SOL Reached ($t \ge T_{\text{sol}}$):** The duration state space locks to $100\%$ Infinite Duration, smoothing out note transients.
+
+
+
+### Anti-Transient Transient Control & Legatissimo Overlap
+
+To eliminate sudden volume spikes capable of triggering defensive cortical K-complex deflections, the voice rendering engine must execute these technical directives:
+
+* 
+**Envelope Profiling:** Every voice instance must be explicitly parameterized with slow, linear or exponential Attack and Release envelope curves. Hard transients, zero-value attacks, and immediate gating clicks are strictly prohibited.
+
+
+* **Inter-Onset Interval (IOI) Crossfade:** The engine cannot rely on standard note-off callbacks. It must look ahead, querying the stochastic pitch matrix and calculating the next note start time before the active note's duration expires.
+
+
+* 
+**Overlap Window:** The subsequent note event must be scheduled to begin its slow attack phase exactly when the preceding note hits the final $25\%$ of its calculated duration. This creates a seamless, gapless legatissimo crossfade that maintains structural acoustic stability.

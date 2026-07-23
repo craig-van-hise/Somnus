@@ -1,0 +1,41 @@
+
+# Somnus: A Generative Sleep Music Mobile Web Application- Product Goals & Vision Document
+
+## 1. Executive Summary
+
+The core objective of this **mobile web application** is to provide a non-pharmacological, evidence-based auditory intervention to assist users with sleep induction and sleep maintenance directly through their **mobile web browsers**. Optimized for seamless, low-friction access on smartphones and tablets without requiring a native app store download, this platform leverages a real-time generative music engine driven by stochastic processes (Markov chains and weighted temporal pools). The mobile web app dynamically personalizes the audio stream—engineered for stable background playback and low battery consumption during extended use—to guide the user from cognitive hyperarousal (wakefulness) seamlessly into Slow-Wave Sleep (SWS), stabilizing the cortical environment without creating dynamic or structural distractions.
+
+## 2. Core Product Goals
+
+### A. Mitigate Pre-Sleep Cognitive Hyperarousal
+
+Clinical somnology shows that anxiety, rumination, and everyday stress prolong sleep onset latency (SOL). The primary goal of the app's initial phase is to engage the subcortical dopaminergic reward system (the psychological pleasure of music) using familiar, safe, and highly consonant intervals (e.g., Major Pentatonic scales). This provides a gentle cognitive distraction, moving the brain away from internal analytical loops without engaging language processing centers.
+
+### B. Enforce Sympatho-Respiratory Coupling
+
+The application aims to actively downregulate the sympathetic nervous system and shift autonomic balance toward parasympathetic (vagal) control. By initiating playback at a resting heart-rate tempo (up to 80 BPM) and systematically decelerating over a targeted timeline down to 50 BPM, the app coaxes the user's cardiovascular and respiratory rhythms into alignment. This manifests physically as lower cortisol levels, reduced blood pressure, and prolonged respiratory cycles.
+
+### C. Prevent Auditory Pattern Recognition & Predictive Decoding
+
+A major flaw in pre-recorded sleep tracks or looping soundscapes is that the primary auditory cortex actively seeks out patterns. Once the brain memorizes a loop or can predict an upcoming melodic turn, it enters an alert state of predictive decoding. The goal of using a 1st-order Markov chain for pitch and an independent stochastic engine for note duration is to create an environment that is coherent and familiar, yet entirely unpredictable. The brain cannot find a loop, eventually ceases its predictive modeling, and allows the thalamic gate to close.
+
+### D. Protect the Sleep Architecture (Minimizing REM Suppression)
+
+Recent literature highlights that continuous broadband exposure (like continuous pink or white noise) over a whole night exacts a severe physiological toll, notably cutting REM sleep by an average of 18.6 minutes due to constant sensory load. The app resolves this by implementing a 3-Phase Lifecycle (Descent, Hold, Fade). Once the sleep onset target is reached, the music collapses entirely into an unchanging, low-frequency fundamental drone to anchor Slow Wave Activity, and then imperceptibly fades out entirely before the final stretch of the session, preserving holistic sleep continuity.
+
+## 3. User Experience & Psychological Interface Goals
+
+A critical psychological hazard in sleep technology is "performance anxiety"—when a user feels forced or pressured by the interface to fall asleep within a visible countdown, it triggers the Ascending Reticular Activating System (ARAS), creating acute alertness. To counter this, the UX architecture is governed by the following strict guidelines:
+
+* **Frictionless Setup:** The primary interface consists of only two fluid, continuous sliders ("Session Duration" and "Current State" running from Awake to Sleepy). The user does not need to configure complex music theory modules to get started.
+* **Eliminating Time Anxiety:** The application internally calculates the ideal Sleep Onset Latency (SOL) based on the "Current State" selection (e.g., targeting a 25-minute descent if wide awake, or a 10-minute descent if already sleepy). This countdown is purposely hidden from the main screen. The user only sees the total session duration, treating the app as a passive environment rather than a timer they are "supposed" to beat.
+* **Advanced Control Separation:** For power users and system testing, a manual sleep onset target slider is completely isolated inside an advanced settings modal, hidden behind a cog icon. This keeps technical fine-tuning out of the daily user's view.
+
+## 4. Technical Execution Targets
+
+To ensure the clinical viability of the audio output, the generative web app must meet these core synthesis requirements:
+
+* **Spectral Flux Control:** Zero sudden transients or volume spikes. All generated notes must utilize slow, linear or exponential attack/release envelope curves to prevent triggering micro-arousals or defensive cortical K-complex deflections.
+* **Independent Voice Registers:** Strict adherence to a Perfect 12th minimum vertical clearance between the low-end drone pool and middle harmonic pads. This maintains tonal balance and eliminates low-end interval "mud," keeping the acoustic envelope clean and stable.
+* **Absorbing State Transition:** The mathematical collapse of the Markov chain into a 100% probability Root note at the targeted SOL limit. This smoothly transitions the audio profile from an engaging musical structure to a pure, low-frequency physiological anchor.
+* **Low Brightness Filtering:** Heavy high-frequency equalization (treble attenuation) and low-amplitude restrictions above C5. This creates a warm, non-fatiguing acoustic envelope that the brainstems naturally associate with a secure, quiet physical environment.

@@ -1,0 +1,102 @@
+# Product Requirements Document: Somnus
+
+## 1. Executive Summary & Product Vision
+
+Somnus is a mobile web application designed to provide a non-pharmacological, evidence-based auditory intervention to assist users with sleep induction and sleep maintenance. The platform is accessed directly through mobile web browsers, eliminating the friction of native app store downloads.
+
+Using a real-time generative music engine, Somnus dynamically personalizes an audio stream to guide users from cognitive hyperarousal seamlessly into Slow-Wave Sleep (SWS). It achieves this by stabilizing the cortical environment without introducing dynamic or structural distractions.
+
+## 2. Problem Statement
+
+The current landscape of sleep audio products suffers from several physiological and psychological pitfalls:
+
+* 
+**Cognitive Hyperarousal:** Everyday stress, anxiety, and rumination actively prolong sleep onset latency (SOL).
+
+
+* 
+**Predictive Decoding:** Pre-recorded sleep tracks or looping soundscapes fail because the primary auditory cortex actively seeks out patterns. Once a loop is memorized, the brain enters an alert state of predictive decoding.
+
+
+* 
+**REM Suppression:** Continuous broadband exposure (like leaving white or pink noise on all night) inflicts a sensory load that cuts REM sleep by an average of 18.6 minutes.
+
+
+* 
+**Performance Anxiety:** Visible countdown timers in sleep apps trigger the Ascending Reticular Activating System (ARAS), creating acute alertness and pressuring the user.
+
+
+
+## 3. Goals & Non-Goals
+
+### Goals
+
+* 
+**Mitigate Hyperarousal:** Engage the psychological pleasure of music using familiar, highly consonant intervals (e.g., Major Pentatonic scales) as a gentle cognitive distraction.
+
+
+* 
+**Enforce Sympatho-Respiratory Coupling:** Downregulate the sympathetic nervous system by starting playback at a resting heart-rate tempo (up to 80 BPM) and systematically decelerating to 50 BPM.
+
+
+* 
+**Create Unpredictability:** Utilize a generative stochastic engine to ensure the brain cannot find a loop, ceasing predictive modeling and allowing the thalamic gate to close.
+
+
+* 
+**Protect Sleep Architecture:** Utilize a 3-Phase Lifecycle (Descent, Hold, Fade) that collapses into a low-frequency drone before imperceptibly fading out entirely, minimizing sensory load during deep sleep.
+
+
+
+### Non-Goals (Out of Scope)
+
+* Requiring users to download an application from an app store.
+
+
+* Presenting complex music theory configurations or technical audio modules to the standard user.
+
+
+* Keeping continuous audio playing throughout the entire night.
+
+
+
+## 4. User Experience (UX) & Interface Requirements
+
+The psychological interface of Somnus must prioritize a frictionless setup to avoid performance anxiety.
+
+* **The Primary Interface:** The main screen features the Somnus branding, an "ENGINE STANDBY" indicator, a central Play button, and only two fluid sliders.
+* **Session Duration Slider:** Maps linearly from 30 to 120 minutes, allowing the user to dictate the total runtime.
+* **Current State Slider:** Maps from "Awake" to "Sleepy" to control the starting complexity of the audio.
+* 
+**Hidden Timers:** The app internally calculates the targeted Sleep Onset Latency (SOL) based on the "Current State" selection. This countdown must remain strictly hidden from the user to prevent time anxiety.
+
+
+* **Advanced Control Isolation:** A manual sleep onset target slider must be completely isolated inside an advanced settings modal, accessible only via a hidden cog icon for power users and system testing.
+
+## 5. Core User Stories
+
+* 
+**As a user seeking to sleep,** I want to adjust my "Current State" on a simple slider so the app automatically tailors the music's complexity without me having to guess the exact minutes it will take me to fall asleep.
+
+
+* 
+**As a user prone to anxiety,** I need the audio to be free of sudden transients, volume spikes, or high-pitched treble so that I am not startled awake.
+
+
+* 
+**As a user optimizing my sleep health,** I want the music to gently fade away to complete silence before the end of my session so my REM sleep is not disrupted.
+
+
+* 
+**As a developer or power user,** I need to access a hidden settings modal to manually override the sleep target timeline for testing purposes.
+
+
+
+## 6. Success Metrics
+
+* 
+**System Stability:** The engine must maintain stable background playback with low battery consumption during extended use.
+
+
+* 
+**Acoustic Integrity:** Zero sudden volume spikes or transients that could trigger defensive cortical K-complex deflections.

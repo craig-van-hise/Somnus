@@ -1,0 +1,92 @@
+# Frontend & Architecture Specification Sheet: Somnus
+
+## 1. Core Technology Stack
+
+* **Frontend Framework:** React (latest stable version).
+* **Styling Methodology:** Tailwind CSS.
+* **Audio Engine:** `Tone.js` paired with standard Web Audio API `AudioWorklet` nodes (as defined in the Audio Specs).
+* **Hosting/Deployment:** Static site deployment via GitHub Pages.
+* **Architecture:** Standard Single-Page Application (SPA). Explicitly **no** Progressive Web App (PWA) manifest or offline service workers required for V1.
+
+## 2. Background Audio & Lock-Screen Persistence
+
+Mobile browsers (iOS Safari, Android Chrome) aggressively pause JavaScript execution when the device is locked. To ensure the generative Markov chains and audio rendering survive screen locks, the app must implement a three-pillar background persistence strategy:
+
+### Pillar A: The Media Session API
+
+The application must register with the `navigator.mediaSession` API. This signals to the operating system that the browser tab is an active media player.
+
+* Set `navigator.mediaSession.metadata` with the title "Somnus" and a placeholder album art image.
+* Register dummy action handlers for `play` and `pause`. Even if the user doesn't use the lock-screen controls, registering them forces the OS to prioritize the tab's background execution.
+
+### Pillar B: The "Silent Loop" Anchor
+
+Mobile operating systems will still kill the Web Audio context if they detect a drop in active sound output.
+
+* Upon the user pressing the primary "Play" button, the app must immediately trigger an inaudible, infinite audio loop (e.g., a `Tone.Oscillator` set to a frequency of 1Hz at -100dB, or a looping blank HTML5 `<audio>` element).
+* This silent anchor must remain active for the entirety of the session to prevent the OS from suspending the `AudioContext`.
+
+### Pillar C: Audio Thread Scheduling (Lookahead)
+
+JavaScript's `setTimeout` and `setInterval` are useless when a phone is locked.
+
+* The React app must rely entirely on `Tone.Transport` and the Web Audio API's internal clock (`audioContext.currentTime`), which is tied to the hardware audio buffer and does not pause when the screen locks.
+* The generative Markov chain algorithm must calculate notes in "lookahead" batches and schedule them onto the `Tone.Transport` timeline at least 2–5 seconds into the future, rather than attempting to trigger them exactly at the moment they need to play.
+
+## 3. UI/UX Implementation Details (Tailwind CSS)
+
+The GUI must be mapped to the provided mockup using Tailwind utility classes.
+
+### Visual Theme & Layout
+
+* **Background:** A dark, celestial aesthetic. Use a full-screen, non-scrolling layout (`h-screen overflow-hidden`). The background should be a deep navy gradient or a static nebulous image.
+* **Typography:** * App Title ("Somnus"): A refined, italicized Serif font (e.g., `font-serif italic`).
+* UI Labels & Timers: A clean, monospaced or modern Sans-Serif font with high tracking (e.g., `font-sans tracking-widest text-xs`).
+
+
+* **Glassmorphism Elements:** The main control panel and bottom footer must use semi-transparent white/blue backgrounds with heavy backdrop blurs (`bg-white/10 backdrop-blur-md rounded-3xl border border-white/20`).
+
+### Component Behaviors
+
+* **Primary Play Button:** Centered prominently. Must trigger the `AudioContext.resume()` initialization, start the background silent anchor, and transition the "ENGINE STANDBY" text to "SESSION ACTIVE".
+* **Sliders:** Standard HTML range inputs styled with custom CSS or a lightweight React slider library, customized to show a bright glowing thumb and a gradient track.
+* *Session Duration:* Maps to standard minutes (30m to 120m).
+* *Current State:* Maps a float `0.00` to `1.00`.
+
+
+* **Advanced Settings Modal (Agent Improvised):** Accessed via the bottom-right cog icon. The coding agent is authorized to improvise this design, provided it adheres to the global glassmorphism theme, centers on the screen as an overlay, and contains a simple toggle and manual slider for the SOL Target.
+
+## 4. State Management (React)
+
+A centralized state manager (React Context or Zustand) is recommended to prevent excessive prop-drilling between the UI and the `GenerativeAudioController`.
+
+* The state must hold `sessionDuration` and `currentState`.
+* Sliders must implement a debouncing mechanism. When the user scrubs a slider, the visual UI should update at 60fps, but the actual mathematical parameter update sent to the `Tone.js` audio engine should be debounced by ~100ms to prevent audio glitching from rapid parameter modulation.
+
+
+## 5. Asset Preloading & Error Handling Strategy
+
+To ensure a seamless, native-app-like experience, the application must robustly handle the asynchronous loading of external assets and the strict autoplay policies of mobile web browsers.
+
+### A. Asset Initialization & Preloading (The "Gatekeeper" Pattern)
+
+Even at a highly optimized 1.2 MB, the `MIT_KEMAR` impulse response file and the Open Binaural Renderer (OBR) WebAssembly binaries cannot be fetched at the exact moment the user presses "Play." Doing so will cause the Web Audio API context to stall, resulting in silence or a broken audio graph.
+
+* **On Mount:** The moment the React application mounts (`useEffect` on the root component), it must initiate a `Promise.all` sequence to fetch the `MIT_KEMAR` file and instantiate the OBR `.wasm` module into browser memory.
+* **UI Locking:** While this `Promise` is pending, the primary Play button must be disabled and visually represent a loading state (e.g., a spinning ring or low-opacity pulse).
+* **Resolution:** Only when the assets are successfully buffered in memory should the Play button illuminate and become clickable, transitioning the text from "INITIALIZING..." to "ENGINE STANDBY".
+
+### B. Mobile AudioContext Autoplay Policies
+
+iOS Safari and Android Chrome strictly prohibit audio playback without a direct, user-initiated interaction (a click or touch event). Furthermore, if the browser suspects the page is trying to bypass this, it will force the `AudioContext` into a `suspended` state.
+
+* **The Initialization Interaction:** The primary Play button acts as the explicit user gesture. The `onClick` handler must synchronously call `await Tone.start()` before attempting to connect or start the FDN Reverb or Markov chain engines.
+
+### C. Graceful Error Recovery (The "Tap to Unlock" Overlay)
+
+If the browser throttles the audio context or an unexpected suspension occurs during playback, the app must not fail silently.
+
+* **State Monitoring:** The centralized React state manager must continuously monitor `Tone.context.state`.
+* **Fallback UI:** If the state evaluates to `suspended` *after* the user has initiated the session, the UI must immediately render a full-screen, semi-transparent overlay (e.g., `bg-black/80 backdrop-blur-sm z-50`).
+* **Overlay Action:** The overlay must display clear, non-technical text: *"Audio engine paused by browser. Tap anywhere to resume."* * **Recovery:** Clicking anywhere on this overlay triggers a raw `Tone.context.resume()` command and removes the overlay upon successful resolution.
+

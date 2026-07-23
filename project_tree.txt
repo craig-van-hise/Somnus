@@ -1,0 +1,57 @@
+
+/Users/vv2024/Documents/Repos - vv2024/Somnus
+├── FAILURE_REPORT.md
+├── Foundational Docs
+|  ├── # 1 Somnus- A Generative Sleep Music Mobile Web Application- Product Goals & Vision Document.txt
+|  ├── # 2 Somnus - Frontend & Architecture Specification Sheet- Somnus.txt
+|  ├── # 3 Somnus - Generative Sleep Music Engine- Technical Specifications.txt
+|  ├── # 4 Somnus - Software Specification Sheet- Generative Sleep Music Synthesis Engine.txt
+|  ├── # 5 Somnus - Comprehensive Engineering Specification- 2OA Sleep FDN Reverb Engine.txt
+|  ├── # Product Requirements Document- Somnus.txt
+|  └── GUI mockup.png
+├── PROJECT_CONTEXT_BUNDLE.md
+├── PROJECT_STATE.md
+├── README.md
+├── index.html
+├── llms.txt
+├── package-lock.json
+├── package.json
+├── project_tree.txt
+├── public
+|  └── assets
+|     └── fdn-reverb-worklet.js
+├── src
+|  ├── App.jsx
+|  ├── components
+|  |  ├── AudioSuspendedOverlay.jsx
+|  |  ├── PlayButton.jsx
+|  |  ├── SettingsModal.jsx
+|  |  └── Sliders.jsx
+|  ├── context
+|  |  └── AppContext.jsx
+|  ├── engine
+|  |  ├── GenerativeAudioController.js
+|  |  ├── fdnReverbMath.js
+|  |  ├── lifecycleRampEngine.js
+|  |  ├── parameterCalculator.js
+|  |  └── pitchEngine.js
+|  ├── index.css
+|  ├── main.jsx
+|  ├── services
+|  |  └── assetLoader.js
+|  └── test
+|     ├── phase1.test.jsx
+|     ├── phase2.test.js
+|     ├── phase3.test.jsx
+|     ├── phase4.test.js
+|     ├── phase5.test.js
+|     ├── phase6.test.js
+|     └── setup.js
+└── vite.config.js
+
+directory: 489 file: 4244
+
+ignored: directory (72)
+
+
+[2K[1G

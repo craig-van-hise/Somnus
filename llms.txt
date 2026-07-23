@@ -1,0 +1,5 @@
+# Somnus Project Documentation
+
+- [README.md](file:///Users/vv2024/Documents/Repos%20-%20vv2024/Somnus/README.md): Quick start and project structure overview.
+- [PROJECT_STATE.md](file:///Users/vv2024/Documents/Repos%20-%20vv2024/Somnus/PROJECT_STATE.md): Current architecture, tech stack, functional capabilities, and documented pause status.
+- [PRPs/# 0.md](file:///Users/vv2024/Documents/Repos%20-%20vv2024/Somnus/PRPs/%23%200.md): Original phased development plan.

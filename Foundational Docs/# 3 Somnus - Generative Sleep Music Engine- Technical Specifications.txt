@@ -1,0 +1,146 @@
+
+# Generative Sleep Music Engine: Technical Specifications
+
+## 1. System Architecture & UI Parameter Mapping
+
+The engine is driven by two fluid user inputs mapped to internal floats ($0.0$ to $1.0$). These variables dynamically scale the starting parameters and the evolutionary rate of decay toward the Sleep Onset Latency (SOL) target.
+
+### UI Controls
+
+* **Session Duration ($D$):** Linear mapping from $0.0 \to 1.0$, corresponding to a runtime of $30 \to 120$ minutes.
+* **Current State ($S$):** Linear mapping from $0.0 \to 1.0$ ($0.0 = \text{Awake}$, $1.0 = \text{Sleepy}$). Controls starting complexity.
+* **Manual SOL Target (Advanced Settings Modal):** Checkbox toggle. If true, enables a manual target slider ($5 \to 45$ minutes) to override the auto-calculated timeline for system testing.
+
+### Internal Calculations
+
+* **Total Runtime ($T_{\text{total}}$):** $T_{\text{total}} = 30 + (90 \cdot D)$ minutes.
+* **Active Sleep Onset Target ($T_{\text{sol}}$):**
+* *Default (Auto):* $T_{\text{sol}} = 25 - (15 \cdot S)$ minutes.
+* *Manual:* Explicitly set by the advanced modal slider.
+
+
+* **Starting Tempo ($\text{BPM}_{\text{start}}$):** $\text{BPM}_{\text{start}} = 80 - (20 \cdot S)$.
+* **Starting Complexity Matrix Baseline ($\text{Comp}_{\text{start}}$):** $\text{Comp}_{\text{start}} = 1.0 - (0.5 \cdot S)$.
+
+---
+
+## 2. Global Time Architecture (3-Phase Lifecycle)
+
+The generative playback window is mathematically segmented into three continuous phases anchored to $T_{\text{sol}}$ and $T_{\text{total}}$:
+
+```
+[ Phase 1 & 2: Descent ] ---------> [ Phase 3: Hold ] ---------> [ Phase 4: Fade ]
+0 --------------------> T_sol --------------------> T_total - 10m ---------> T_total
+(Complexity 100% -> 0%)             (Absorbing Drone)           (Imperceptible Volume Fade)
+(BPM: Start -> 50)                  (BPM Locked at 50)          (BPM Locked at 50)
+
+```
+
+1. **Descent Phase (Time $0 \to T_{\text{sol}}$):** * Tempo decelerates linearly from $\text{BPM}_{\text{start}}$ down to $50$ BPM (sympatho-respiratory coupling threshold).
+* Harmonic and temporal matrices continuously strip away complexity down to $0\%$.
+
+
+2. **Hold Phase (Time $T_{\text{sol}} \to T_{\text{total}} - 10 \text{ minutes}$):** * The engine locks into a pure fundamental root drone. All rhythmic and melodic voice components cease generation.
+* Tempo is locked at $50$ BPM. System volume remains constant at full normalization.
+
+
+3. **Fade Phase (Final $10 \text{ minutes} \to T_{\text{total}}$):** * The master gain curve undergoes an exponential fade-out to $0\%$ volume.
+* *Constraint:* The slope must be slow and imperceptible to avoid the reverse high spectral flux artifact that triggers an evoked cortical K-complex arousal.
+
+
+
+---
+
+## 3. Harmonic Architecture & Pitch Rules
+
+The architecture separates the low-frequency foundation from middle/treble textures to prevent acoustic mud, ensuring a warm, comforting acoustic envelope. The session key remains completely static throughout the entire runtime (no harmonic modulations).
+
+### Voice Register Definitions
+
+* **Layer I (Independent Drone Layer):** $\text{C-1}$ to $\text{C2}$.
+* **Layer II (Harmonic Pad/Choral Layer):** $\text{C2}$ to $\text{G3}$.
+* **Layer III (Textural/Melodic Layer):** $\text{A3}$ to $\text{C5}$ (Max $\text{C6}$ for rare, low-amplitude treble accents during Phase 1).
+
+### The Dynamic Pitch Markov Chain
+
+Layer III and Layer II are governed by an evolving 1st-order Markov chain over the state space of the Major Pentatonic scale $\{1, 2, 3, 5, 6\}$ (e.g., in C Major: $\{\text{C, D, E, G, A}\}$).
+
+* **High Complexity (Time $0 \to 0.25 \cdot T_{\text{sol}}$):** Proportional mapping based on $\text{Comp}_{\text{start}}$. The transition matrix allows free movement across all 5 pentatonic degrees to offer psychological pleasure and cognitive de-arousal. Tonal centers ($1$ and $5$) maintain a high probability weight.
+* **Mid Complexity (Time $0.25 \cdot T_{\text{sol}} \to 0.75 \cdot T_{\text{sol}}$):** The probabilities of transitioning to the 3rd ($\text{E}$) and 6th ($\text{A}$) decline monotonically toward zero. Transitions out of the 2nd ($\text{D}$) lean heavily toward immediate resolution down to the Tonic.
+* **Absorbing Sleep State (Time $\ge T_{\text{sol}}$):** The matrix collapses into an absorbing state. The row probability for transitioning from the Tonic to the Tonic ($1 \to 1$) reaches $1.0$ ($100\%$). Any remaining upper-register voices resolve to the root note and terminate active updates.
+
+### Layer I: Independent Drone Pool Rules
+
+The low-end engine uses a weighted probability pool rather than static intervals, moving slowly (new note selections evaluate only every $8 \to 16$ seconds) to avoid mud.
+
+* **Allowed Pitch Space:** Root ($1$), Fifth ($5$), with low-probability, rare insertions of the Fourth ($4$), Second ($2$), and Sixth ($6$) to allow wandering harmonic warmth in Phase 1.
+* **Evolutionary Thinning:**
+* *Phase 1:* Full pool allowed; Root weighted at $50\%$, Fifth at $25\%$, others sharing the remainder.
+* *Phase 2:* Pool thins exclusively to $\{1, 5\}$. Weights scale to Root ($75\%$) / Fifth ($25\%$).
+* *Phase 3:* Pool contains only $\{1\}$ (Root) at $100\%$ probability.
+
+
+* **Acoustic Clearance Constraint:** The engine enforces a minimum vertical clearance of a **Perfect 12th** (an octave + a perfect 5th) between the highest active tone in Layer I and the lowest generated pitch in Layer II.
+
+---
+
+## 4. Temporal Engine & Rhythmic Mapping
+
+Rhythm operates on a completely independent stochastic process to eliminate pattern recognition and avoid the predictive coding traps of the primary auditory cortex. The system does not write notes to a rigid tempo grid.
+
+### Duration State Space
+
+Notes are assigned absolute lengths chosen from an evolving duration pool:
+
+* **Short Duration:** $2 \to 4$ beats.
+* **Medium Duration:** $8$ beats.
+* **Long Duration:** $16$ beats.
+* **Infinite Duration:** Continuous sustained drone.
+
+### Temporal Density Decay
+
+* **Awake Start ($S = 0.0$):** The pool favors Short and Medium values. This generates a higher density of note changes, capturing the user's attention to distract from cognitive anxiety loops.
+* **Transition Phase:** Short durations drop out entirely ($0\%$ probability). Medium and Long durations dominate, causing phrases to elongate and pull down breathing cycles via sympatho-respiratory coupling.
+* **SOL Target Peak ($\ge T_{\text{sol}}$):** The pool locks into $100\%$ Infinite Duration, smoothing out all transient volume peaks.
+
+### Legato Overlap and Synthesis Rules
+
+To prevent dynamic spikes that trigger K-complex structural defenses, the temporal engine manages a continuous audio envelope:
+
+* **Envelope Constraints:** Every generated pitch must utilize slow, linear or exponential Attack and Release parameters (no rapid transients/clicks).
+* **Inter-Onset Interval (IOI) Overlap:** The engine queries the pitch matrix and triggers the *next* note before the active note's duration has expired. The default overlap threshold requires the next note to begin its attack phase during the final $25\%$ of the preceding note's calculated duration, producing a seamless, legatissimo crossfade that maintains a warm, secure acoustic envelope.
+
+---
+
+## 5. Algorithmic Processing Loop
+
+```
+                     +---------------------------------------+
+                     |             SOL Timer Loop            |
+                     +---------------------------------------+
+                                         |
+                                         v
+                     +---------------------------------------+
+                     |  Calculate Dynamic Scales & Progress  |
+                     +---------------------------------------+
+                                         |
+                     +-------------------+-------------------+
+                     |                                       |
+                     v                                       v
++---------------------------------------+ +---------------------------------------+
+|        Temporal Engine (Rhythm)       | |         Harmonic Engine (Pitch)       |
++---------------------------------------+ +---------------------------------------+
+| - Calculates Step Start/Stop Times    | | - Evaluates Pitch Markov Chain        |
+| - Controls Legato Crossfades & IOI    | | - Pulls from Weighted Drone Pool      |
+| - Shifts Pool from Short to Infinite  | | - Collapses Matrix to Absorbing Root  |
++---------------------------------------+ +---------------------------------------+
+                     |                                       |
+                     +-------------------+-------------------+
+                                         |
+                                         v
+                     +---------------------------------------+
+                     |        Synthesizer Audio Output       |
+                     |       (Static Key, Low Brightness)    |
+                     +---------------------------------------+
+
+```
