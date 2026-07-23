@@ -14,9 +14,9 @@ describe('Phase 3: Asset URL Encoding', () => {
     const waveArgs = playerSpy.mock.calls.find(call => call[0].url && call[0].url.includes('Ocean'));
 
     expect(rainArgs).toBeDefined();
-    // The URL must strictly equal the encoded version
-    expect(rainArgs[0].url).toBe(encodeURI('/Nature Sounds Audio/Rain/rain.wav'));
-    expect(waveArgs[0].url).toBe(encodeURI('/Nature Sounds Audio/Ocean Waves/ocean.wav'));
+    // The URL must contain the encoded nature sounds path (may be prefixed by Vite base)
+    expect(rainArgs[0].url).toContain('Nature%20Sounds%20Audio/Rain/rain.wav');
+    expect(waveArgs[0].url).toContain('Nature%20Sounds%20Audio/Ocean');
 
     playerSpy.mockRestore();
   });

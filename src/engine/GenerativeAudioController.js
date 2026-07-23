@@ -1,6 +1,11 @@
 import * as Tone from 'tone';
 import { calculateEntrainmentFrequency, calculateLpfCutoff } from './lifecycleRampEngine';
 
+// Resolve Vite base path for GitHub Pages deployment
+const BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL)
+  ? import.meta.env.BASE_URL
+  : '/';
+
 
 // INJECT NATIVE CONTEXT IMMEDIATELY TO ALIGN SINGLETONS
 // This prevents Tone.Transport clock freezing and bypasses the polyfill InvalidAccessErrors.
@@ -33,6 +38,7 @@ export class GenerativeAudioController {
     this.silentAnchorOsc = null;
     this.harmonicLoop = null;
     this.melodicLoop = null;
+    this.iosKeepAliveAudio = null;
 
     // Phase 3 5-Channel Topology & Master LPF
     this.masterLpf = null;
@@ -99,7 +105,7 @@ export class GenerativeAudioController {
     // 3. Initialize Native AudioWorklet & Route
     try {
       if (nativeContext && nativeContext.audioWorklet) {
-        await nativeContext.audioWorklet.addModule('/assets/fdn-reverb-worklet.js');
+        await nativeContext.audioWorklet.addModule(`${BASE}assets/fdn-reverb-worklet.js`);
         const AudioWorkletNodeClass = typeof window !== 'undefined' && window.AudioWorkletNode ? window.AudioWorkletNode : globalThis.AudioWorkletNode;
         if (AudioWorkletNodeClass) {
           this.reverbWorklet = new AudioWorkletNodeClass(nativeContext, 'fdn-reverb-worklet', {
@@ -228,14 +234,16 @@ export class GenerativeAudioController {
     }
 
     // 8. Channel 4: Nature Ambience Submixer (CrossFade + Rain/Ocean Players)
+    const rainUrl = `${BASE}Nature%20Sounds%20Audio/Rain/rain.wav`;
+    const oceanUrl = `${BASE}Nature%20Sounds%20Audio/Ocean%20Waves/ocean.mp3`;
     try {
-      fetch(encodeURI('/Nature Sounds Audio/Rain/rain.wav')).catch(() => {});
+      fetch(rainUrl).catch(() => {});
       this.rainPlayer = new Tone.Player({
-        url: encodeURI('/Nature Sounds Audio/Rain/rain.wav'),
+        url: rainUrl,
         loop: true,
         fade: 2.0,
       });
-      this.safeLoadBuffer(encodeURI('/Nature Sounds Audio/Rain/rain.wav')).then((rainBuffer) => {
+      this.safeLoadBuffer(rainUrl).then((rainBuffer) => {
         if (rainBuffer && this.rainPlayer) {
           this.rainPlayer.loopStart = 2.0;
           this.rainPlayer.loopEnd = rainBuffer.duration - 2.0;
@@ -243,7 +251,7 @@ export class GenerativeAudioController {
       }).catch(() => {});
     } catch (e) {
       this.rainPlayer = { loop: true, fade: 2.0, connect: () => {}, start: () => {}, stop: () => {} };
-      this.safeLoadBuffer(encodeURI('/Nature Sounds Audio/Rain/rain.wav')).then((rainBuffer) => {
+      this.safeLoadBuffer(rainUrl).then((rainBuffer) => {
         if (rainBuffer && this.rainPlayer) {
           this.rainPlayer.loopStart = 2.0;
           this.rainPlayer.loopEnd = rainBuffer.duration - 2.0;
@@ -253,15 +261,15 @@ export class GenerativeAudioController {
 
     try {
       try {
-        new Tone.Player({ url: encodeURI('/Nature Sounds Audio/Ocean Waves/ocean.wav') });
+        new Tone.Player({ url: `${BASE}Nature%20Sounds%20Audio/Ocean%20Waves/ocean.wav` });
       } catch (e) {}
-      fetch(encodeURI('/Nature Sounds Audio/Ocean Waves/ocean.mp3')).catch(() => {});
+      fetch(oceanUrl).catch(() => {});
       this.wavesPlayer = new Tone.Player({
-        url: encodeURI('/Nature Sounds Audio/Ocean Waves/ocean.mp3'),
+        url: oceanUrl,
         loop: true,
         fade: 2.0,
       });
-      this.safeLoadBuffer(encodeURI('/Nature Sounds Audio/Ocean Waves/ocean.mp3')).then((wavesBuffer) => {
+      this.safeLoadBuffer(oceanUrl).then((wavesBuffer) => {
         if (wavesBuffer && this.wavesPlayer) {
           this.wavesPlayer.loopStart = 2.0;
           this.wavesPlayer.loopEnd = wavesBuffer.duration - 2.0;
@@ -269,7 +277,7 @@ export class GenerativeAudioController {
       }).catch(() => {});
     } catch (e) {
       this.wavesPlayer = { loop: true, fade: 2.0, connect: () => {}, start: () => {}, stop: () => {} };
-      this.safeLoadBuffer(encodeURI('/Nature Sounds Audio/Ocean Waves/ocean.mp3')).then((wavesBuffer) => {
+      this.safeLoadBuffer(oceanUrl).then((wavesBuffer) => {
         if (wavesBuffer && this.wavesPlayer) {
           this.wavesPlayer.loopStart = 2.0;
           this.wavesPlayer.loopEnd = wavesBuffer.duration - 2.0;
@@ -390,6 +398,67 @@ export class GenerativeAudioController {
     } catch (e) {
       console.warn('Silent anchor start warning:', e);
     }
+
+    // iOS Background Audio Keepalive:
+    // iOS Safari suspends WebAudio when the screen locks. A real <audio> element
+    // playing a tiny silent loop keeps the audio session alive in the background.
+    this.startIOSKeepAlive();
+  }
+
+  startIOSKeepAlive() {
+    try {
+      if (this.iosKeepAliveAudio) return;
+      if (typeof document === 'undefined') return;
+
+      // Generate a 1-second silent WAV as a data URI
+      const sampleRate = 8000;
+      const numSamples = sampleRate; // 1 second
+      const dataSize = numSamples * 2; // 16-bit mono
+      const fileSize = 44 + dataSize;
+      const buffer = new ArrayBuffer(fileSize);
+      const view = new DataView(buffer);
+
+      // WAV header
+      const writeString = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
+      writeString(0, 'RIFF');
+      view.setUint32(4, fileSize - 8, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true);
+      view.setUint16(20, 1, true); // PCM
+      view.setUint16(22, 1, true); // Mono
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * 2, true);
+      view.setUint16(32, 2, true);
+      view.setUint16(34, 16, true);
+      writeString(36, 'data');
+      view.setUint32(40, dataSize, true);
+      // Samples are all zero (silence)
+
+      const blob = new Blob([buffer], { type: 'audio/wav' });
+      const url = URL.createObjectURL(blob);
+
+      const audio = document.createElement('audio');
+      audio.src = url;
+      audio.loop = true;
+      audio.volume = 0.01; // Near-silent but nonzero to satisfy iOS
+      audio.setAttribute('playsinline', '');
+      audio.play().catch(() => {});
+
+      this.iosKeepAliveAudio = audio;
+    } catch (e) {
+      console.warn('iOS keepalive warning:', e);
+    }
+  }
+
+  stopIOSKeepAlive() {
+    try {
+      if (this.iosKeepAliveAudio) {
+        this.iosKeepAliveAudio.pause();
+        this.iosKeepAliveAudio.src = '';
+        this.iosKeepAliveAudio = null;
+      }
+    } catch (e) {}
   }
 
   async startSession() {
@@ -501,6 +570,7 @@ export class GenerativeAudioController {
         if (this.layer1Synth && this.layer1Synth.releaseAll) {
           try { this.layer1Synth.releaseAll(); } catch (e) {}
         }
+        this.stopIOSKeepAlive();
       };
 
       setTimeout(stopNodes, 1000);
