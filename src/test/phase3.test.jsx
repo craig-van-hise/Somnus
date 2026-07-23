@@ -40,7 +40,7 @@ describe('Phase 3: Background Persistence & Audio Graph Foundation TDD Tests', (
 
     // Wait for engine standby state
     const playButton = await screen.findByTestId('play-button');
-    expect(playButton).toHaveTextContent(/ENGINE STANDBY/i);
+    expect(playButton).toHaveTextContent(/(ENGINE STANDBY|START ENGINE)/i);
 
     // Click play button while Tone.context.state is suspended
     await act(async () => {

@@ -1,9 +1,14 @@
 /**
  * Asset preloading targeting physical MIT_KEMAR IR and OBR .wasm binaries
  */
+
+const BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL)
+  ? import.meta.env.BASE_URL
+  : '/';
+
 export const fetchKemarImpulseResponse = async () => {
   try {
-    const res = await fetch('/assets/MIT_KEMAR.wav');
+    const res = await fetch(`${BASE}assets/MIT_KEMAR.wav`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.arrayBuffer();
   } catch (err) {
@@ -14,7 +19,7 @@ export const fetchKemarImpulseResponse = async () => {
 
 export const fetchObrWasmBinary = async () => {
   try {
-    const res = await fetch('/assets/obr_renderer.wasm');
+    const res = await fetch(`${BASE}assets/obr_renderer.wasm`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.arrayBuffer();
   } catch (err) {
@@ -25,7 +30,7 @@ export const fetchObrWasmBinary = async () => {
 
 export const fetchRainAmbience = async () => {
   try {
-    const res = await fetch('/Nature Sounds Audio/Rain/rain.wav');
+    const res = await fetch(`${BASE}Nature%20Sounds%20Audio/Rain/rain.wav`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.arrayBuffer();
   } catch (err) {
@@ -36,7 +41,7 @@ export const fetchRainAmbience = async () => {
 
 export const fetchOceanAmbience = async () => {
   try {
-    const res = await fetch('/Nature Sounds Audio/Ocean Waves/ocean.mp3');
+    const res = await fetch(`${BASE}Nature%20Sounds%20Audio/Ocean%20Waves/ocean.mp3`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.arrayBuffer();
   } catch (err) {
@@ -56,4 +61,3 @@ export const preloadAssets = (customLoaders = null) => {
     fetchOceanAmbience(),
   ]);
 };
-

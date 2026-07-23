@@ -47,7 +47,7 @@ export const PlayButton = () => {
     } else if (sessionStatus === 'paused') {
       buttonText = 'SESSION PAUSED';
     } else {
-      buttonText = 'ENGINE STANDBY';
+      buttonText = 'START ENGINE';
     }
   }
 
