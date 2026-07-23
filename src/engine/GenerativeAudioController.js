@@ -337,7 +337,8 @@ export class GenerativeAudioController {
 
     try {
       if (Tone && typeof Tone.loaded === 'function') {
-        await Tone.loaded();
+        const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Tone.loaded timeout')), 3000));
+        await Promise.race([Tone.loaded(), timeout]);
       }
     } catch (e) {
       console.warn('Tone.loaded() wait error:', e);
@@ -471,6 +472,7 @@ export class GenerativeAudioController {
     await this.bootEngine();
     this.setupMediaSession();
     this.startSilentAnchor();
+    this.startIOSKeepAlive();
 
     try {
       const transport = Tone.getTransport ? Tone.getTransport() : Tone.Transport;
