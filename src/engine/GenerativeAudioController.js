@@ -405,42 +405,46 @@ export class GenerativeAudioController {
       if (this.iosKeepAliveAudio) return;
       if (typeof document === 'undefined') return;
 
-      // Generate a 1-second silent WAV as a data URI
-      const sampleRate = 8000;
-      const numSamples = sampleRate; // 1 second
-      const dataSize = numSamples * 2; // 16-bit mono
-      const fileSize = 44 + dataSize;
-      const buffer = new ArrayBuffer(fileSize);
-      const view = new DataView(buffer);
-
-      // WAV header
-      const writeString = (offset, str) => { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); };
-      writeString(0, 'RIFF');
-      view.setUint32(4, fileSize - 8, true);
-      writeString(8, 'WAVE');
-      writeString(12, 'fmt ');
-      view.setUint32(16, 16, true);
-      view.setUint16(20, 1, true); // PCM
-      view.setUint16(22, 1, true); // Mono
-      view.setUint32(24, sampleRate, true);
-      view.setUint32(28, sampleRate * 2, true);
-      view.setUint16(32, 2, true);
-      view.setUint16(34, 16, true);
-      writeString(36, 'data');
-      view.setUint32(40, dataSize, true);
-      // Samples are all zero (silence)
-
-      const blob = new Blob([buffer], { type: 'audio/wav' });
-      const url = URL.createObjectURL(blob);
-
+      // Use a real static WAV file served over HTTP — iOS Safari won't keep
+      // blob: or data: URI audio alive in background, but it will keep a
+      // real network-sourced <audio> element playing.
       const audio = document.createElement('audio');
-      audio.src = url;
+      audio.src = `${BASE}assets/silence.wav`;
       audio.loop = true;
-      audio.volume = 0.01; // Near-silent but nonzero to satisfy iOS
+      audio.volume = 0.01;
       audio.setAttribute('playsinline', '');
       audio.play().catch(() => {});
 
       this.iosKeepAliveAudio = audio;
+
+      // Signal to iOS that media is actively playing
+      if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+        try { navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
+      }
+
+      // Visibility change handler: when iOS suspends the page (lock screen,
+      // switch apps), the AudioContext gets suspended. Re-resume it when the
+      // page becomes visible again, and also proactively poke the context
+      // even when hidden to attempt to stay alive.
+      this._visibilityHandler = () => {
+        try {
+          const ctx = Tone.getContext ? Tone.getContext() : Tone.context;
+          const rawCtx = ctx ? (ctx.rawContext || ctx._context || ctx) : null;
+          const nativeCtx = rawCtx ? (rawCtx._nativeAudioContext || rawCtx._nativeContext || rawCtx._context || rawCtx) : null;
+          const targetCtx = nativeCtx || rawCtx || ctx;
+
+          if (targetCtx && targetCtx.state === 'suspended' && typeof targetCtx.resume === 'function') {
+            targetCtx.resume().catch(() => {});
+          }
+
+          // Re-poke the keepalive audio
+          if (this.iosKeepAliveAudio && this.iosKeepAliveAudio.paused) {
+            this.iosKeepAliveAudio.play().catch(() => {});
+          }
+        } catch (e) {}
+      };
+      document.addEventListener('visibilitychange', this._visibilityHandler);
+
     } catch (e) {
       console.warn('iOS keepalive warning:', e);
     }
@@ -452,6 +456,13 @@ export class GenerativeAudioController {
         this.iosKeepAliveAudio.pause();
         this.iosKeepAliveAudio.src = '';
         this.iosKeepAliveAudio = null;
+      }
+      if (this._visibilityHandler && typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', this._visibilityHandler);
+        this._visibilityHandler = null;
+      }
+      if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
+        try { navigator.mediaSession.playbackState = 'paused'; } catch (e) {}
       }
     } catch (e) {}
   }
