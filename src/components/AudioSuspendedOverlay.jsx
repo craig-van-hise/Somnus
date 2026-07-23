@@ -11,8 +11,16 @@ export const AudioSuspendedOverlay = () => {
 
   const handleResume = async () => {
     try {
-      if (Tone.context && Tone.context.resume) {
-        await Tone.context.resume();
+      const ctx = Tone.getContext ? Tone.getContext() : Tone.context;
+      const rawCtx = ctx ? (ctx.rawContext || ctx._context || ctx) : null;
+      const nativeCtx = rawCtx ? (rawCtx._nativeAudioContext || rawCtx._nativeContext || rawCtx._context || rawCtx) : null;
+      const targetCtx = nativeCtx || rawCtx || ctx;
+
+      if (targetCtx && typeof targetCtx.resume === 'function') {
+        await targetCtx.resume();
+      }
+      if (Tone && typeof Tone.start === 'function') {
+        await Tone.start();
       }
     } catch (err) {
       console.error('AudioContext resume failed:', err);

@@ -8,19 +8,24 @@ export const PlayButton = () => {
 
   const handlePlayPauseClick = async () => {
     if (isLoading) return;
+    setAudioSuspended(false);
 
     // Explicit Audio Initialization directive:
-    // Primary Play button handler MUST synchronously call await Tone.start() first
+    // Primary Play button handler MUST synchronously resume native AudioContext and call await Tone.start()
     try {
+      const ctx = Tone.getContext ? Tone.getContext() : Tone.context;
+      const rawCtx = ctx ? (ctx.rawContext || ctx._context || ctx) : null;
+      const nativeCtx = rawCtx ? (rawCtx._nativeAudioContext || rawCtx._nativeContext || rawCtx._context || rawCtx) : null;
+      const targetCtx = nativeCtx || rawCtx || ctx;
+
+      if (targetCtx && typeof targetCtx.resume === 'function') {
+        await targetCtx.resume();
+      }
       if (Tone && typeof Tone.start === 'function') {
         await Tone.start();
       }
     } catch (e) {
       console.warn('Tone.start() warning:', e);
-    }
-
-    if (Tone.context && Tone.context.state === 'suspended') {
-      setAudioSuspended(true);
     }
 
     if (sessionStatus === 'active') {
@@ -31,6 +36,11 @@ export const PlayButton = () => {
       // Start or resume session (explicitly await boot and start sequence)
       await audioController.startSession();
       setSessionStatus('active');
+
+      const ctx = Tone.getContext ? Tone.getContext() : Tone.context;
+      if (ctx && ctx.state === 'suspended') {
+        setAudioSuspended(true);
+      }
     }
   };
 
