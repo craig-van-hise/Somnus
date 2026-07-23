@@ -398,11 +398,6 @@ export class GenerativeAudioController {
     } catch (e) {
       console.warn('Silent anchor start warning:', e);
     }
-
-    // iOS Background Audio Keepalive:
-    // iOS Safari suspends WebAudio when the screen locks. A real <audio> element
-    // playing a tiny silent loop keeps the audio session alive in the background.
-    this.startIOSKeepAlive();
   }
 
   startIOSKeepAlive() {
@@ -533,6 +528,11 @@ export class GenerativeAudioController {
         const fadeTime = this.currentPayload.masterFadeTime ?? 10;
         this.masterBus.volume.rampTo(0, fadeTime);
       }
+
+      // iOS Background Audio Keepalive:
+      // Deferred to AFTER the WebAudio graph is running so it doesn't consume
+      // the user gesture activation token that iOS Safari requires for Tone.start().
+      setTimeout(() => this.startIOSKeepAlive(), 500);
     } catch (err) {
       console.warn('Transport start error:', err);
     }

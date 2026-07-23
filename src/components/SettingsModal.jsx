@@ -54,7 +54,7 @@ export const SettingsModal = () => {
           data-testid="settings-modal"
           className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4"
         >
-          <div className="bg-slate-900/90 border border-white/20 backdrop-blur-xl rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-6 text-white">
+          <div className="bg-slate-900/90 border border-white/20 backdrop-blur-xl rounded-3xl p-6 max-w-sm w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-6 text-white">
             <div className="flex justify-between items-center border-b border-white/10 pb-4">
               <h3 className="font-serif italic text-xl">Advanced Engine Settings</h3>
               <button
