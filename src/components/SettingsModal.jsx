@@ -253,7 +253,7 @@ export const SettingsModal = () => {
               {/* Ch 5: Generative Drone */}
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] font-mono text-slate-300">
-                  <span>Ch 5: Generative Drone</span>
+                  <span>Ch 5: Generative Music</span>
                   <span>{mixerState?.ch5Volume ?? -6} dB</span>
                 </div>
                 <input

@@ -1,11 +1,14 @@
 import * as Tone from 'tone';
-import { calculateEntrainmentFrequency, calculateLpfCutoff } from './lifecycleRampEngine';
+import { calculateEntrainmentFrequency, calculateLpfCutoff, calculateBpmAtTime } from './lifecycleRampEngine';
+import { PitchMarkovEngine } from './pitchEngine';
 import { globalAssetCache } from '../services/assetLoader';
 
 // Resolve Vite base path for GitHub Pages deployment
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL)
   ? import.meta.env.BASE_URL
   : '/';
+
+const BASE64_SILENCE = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA";
 
 
 // INJECT NATIVE CONTEXT IMMEDIATELY TO ALIGN SINGLETONS
@@ -27,6 +30,7 @@ if (typeof window !== 'undefined') {
  */
 export class GenerativeAudioController {
   constructor() {
+    this.pitchEngine = new PitchMarkovEngine();
     this.isInitialized = false;
     this.masterBus = null;
     this.reverbInputBus = null;
@@ -307,6 +311,7 @@ export class GenerativeAudioController {
       this.layer2Synth = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'triangle' },
         envelope: { attack: 2, decay: 1, sustain: 0.8, release: 3 },
+        detune: 35,
       }).connect(this.layer2Filter);
       this.layer2Synth.volume.value = -10;
 
@@ -319,15 +324,43 @@ export class GenerativeAudioController {
       this.layer3Synth = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'sine' },
         envelope: { attack: 1.5, decay: 1, sustain: 0.7, release: 2.5 },
+        detune: 35,
       }).connect(this.layer3Filter);
       this.layer3Synth.volume.value = -10;
+
+      // Rebuild Generative Music Sequencers
+      try {
+        this.harmonicLoop = new Tone.Loop((time) => {
+          // 40% chance to play a chord/note (Ambient Sparsity)
+          if (Math.random() < 0.40) {
+            const validPitches = this.pitchEngine.generateLayer2Pitches('G2'); // Returns G-Major Pentatonic array
+            const randomPitch = validPitches[Math.floor(Math.random() * validPitches.length)];
+            this.layer2Synth.triggerAttackRelease(randomPitch, "2n", time, 0.2); // 0.2 velocity
+          }
+        }, "2n"); // Evaluates every half-note
+
+        this.melodicLoop = new Tone.Loop((time) => {
+          // 30% chance to play a delicate melody note
+          if (Math.random() < 0.30) {
+            const validPitches = this.pitchEngine.generateLayer2Pitches('G2');
+            const randomPitch = validPitches[Math.floor(Math.random() * validPitches.length)];
+            this.layer3Synth.triggerAttackRelease(randomPitch, "4n", time, 0.15); // 0.15 velocity
+          }
+        }, "4n"); // Evaluates every quarter-note
+      } catch (e) {
+        console.warn('Loop instantiation fallback:', e);
+        this.harmonicLoop = { start: () => {}, stop: () => {} };
+        this.melodicLoop = { start: () => {}, stop: () => {} };
+      }
     } catch (e) {
       console.warn('Synth instantiation fallback:', e);
       this.layer1Synth = { connect: () => {}, triggerAttack: () => {}, triggerRelease: () => {}, releaseAll: () => {} };
       this.layer2Filter = { type: 'lowpass', connect: () => {} };
-      this.layer2Synth = { connect: () => {}, triggerAttackRelease: () => {}, releaseAll: () => {} };
+      this.layer2Synth = { connect: () => {}, triggerAttackRelease: () => {}, releaseAll: () => {}, detune: 35 };
       this.layer3Filter = { type: 'lowpass', connect: () => {} };
-      this.layer3Synth = { connect: () => {}, triggerAttackRelease: () => {}, releaseAll: () => {} };
+      this.layer3Synth = { connect: () => {}, triggerAttackRelease: () => {}, releaseAll: () => {}, detune: 35 };
+      this.harmonicLoop = { start: () => {}, stop: () => {} };
+      this.melodicLoop = { start: () => {}, stop: () => {} };
     }
 
 
@@ -384,49 +417,45 @@ export class GenerativeAudioController {
 
   startIOSKeepAlive() {
     try {
-      if (this.iosKeepAliveAudio) return;
       if (typeof document === 'undefined') return;
 
-      // Use a real static WAV file served over HTTP — iOS Safari won't keep
-      // blob: or data: URI audio alive in background, but it will keep a
-      // real network-sourced <audio> element playing.
-      const audio = document.createElement('audio');
-      audio.src = `${BASE}assets/silence.wav`;
-      audio.loop = true;
-      audio.volume = 0.01;
-      audio.setAttribute('playsinline', '');
-      audio.play().catch(() => {});
+      if (!this.iosKeepAliveAudio) {
+        const audio = document.createElement('audio');
+        audio.src = BASE64_SILENCE;
+        audio.loop = true;
+        audio.volume = 0.01;
+        audio.setAttribute('playsinline', '');
+        this.iosKeepAliveAudio = audio;
+      }
 
-      this.iosKeepAliveAudio = audio;
+      // Unconditionally attempt play() to capture the current user gesture
+      this.iosKeepAliveAudio.play().catch(() => {});
 
-      // Signal to iOS that media is actively playing
       if (typeof navigator !== 'undefined' && 'mediaSession' in navigator) {
         try { navigator.mediaSession.playbackState = 'playing'; } catch (e) {}
       }
 
-      // Visibility change handler: when iOS suspends the page (lock screen,
-      // switch apps), the AudioContext gets suspended. Re-resume it when the
-      // page becomes visible again, and also proactively poke the context
-      // even when hidden to attempt to stay alive.
-      this._visibilityHandler = () => {
-        try {
-          const ctx = Tone.getContext ? Tone.getContext() : Tone.context;
-          const rawCtx = ctx ? (ctx.rawContext || ctx._context || ctx) : null;
-          const nativeCtx = rawCtx ? (rawCtx._nativeAudioContext || rawCtx._nativeContext || rawCtx._context || rawCtx) : null;
-          const targetCtx = nativeCtx || rawCtx || ctx;
+      // Setup visibility handler (only once)
+      if (!this._visibilityHandler) {
+        this._visibilityHandler = () => {
+          try {
+            const ctx = Tone.getContext ? Tone.getContext() : Tone.context;
+            const rawCtx = ctx ? (ctx.rawContext || ctx._context || ctx) : null;
+            const nativeCtx = rawCtx ? (rawCtx._nativeAudioContext || rawCtx._nativeContext || rawCtx._context || rawCtx) : null;
+            const targetCtx = nativeCtx || rawCtx || ctx;
 
-          if (targetCtx && targetCtx.state === 'suspended' && typeof targetCtx.resume === 'function') {
-            targetCtx.resume().catch(() => {});
-          }
+            if (targetCtx && targetCtx.state === 'suspended' && typeof targetCtx.resume === 'function') {
+              targetCtx.resume().catch(() => {});
+            }
 
-          // Re-poke the keepalive audio
-          if (this.iosKeepAliveAudio && this.iosKeepAliveAudio.paused) {
-            this.iosKeepAliveAudio.play().catch(() => {});
-          }
-        } catch (e) {}
-      };
-      document.addEventListener('visibilitychange', this._visibilityHandler);
-
+            // Re-poke the keepalive audio
+            if (this.iosKeepAliveAudio && this.iosKeepAliveAudio.paused) {
+              this.iosKeepAliveAudio.play().catch(() => {});
+            }
+          } catch (e) {}
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+      }
     } catch (e) {
       console.warn('iOS keepalive warning:', e);
     }
@@ -505,12 +534,16 @@ export class GenerativeAudioController {
         try { this.wavesPlayer.start(); } catch (e) {}
       }
 
-      // Trigger Layer I Drone notes into Ch5 if active
-      if (this.layer1Synth && this.layer1Synth.triggerAttack) {
-        try {
-          this.layer1Synth.triggerAttack(['C2', 'G2']);
-        } catch (e) {}
-      }
+      // Start Generative Loops
+      if (this.harmonicLoop && this.harmonicLoop.start) this.harmonicLoop.start(0);
+      if (this.melodicLoop && this.melodicLoop.start) this.melodicLoop.start("1m"); // Offset melody start by 1 measure
+
+      // Trigger Layer I Drone notes into Ch5 if active (Silenced per PRP #30)
+      // if (this.layer1Synth && this.layer1Synth.triggerAttack) {
+      //   try {
+      //     this.layer1Synth.triggerAttack(['C2', 'G2']);
+      //   } catch (e) {}
+      // }
 
       if (transport && typeof transport.start === 'function') {
         transport.start("+0.1");
@@ -522,11 +555,6 @@ export class GenerativeAudioController {
         const fadeTime = this.currentPayload.masterFadeTime ?? 10;
         this.masterBus.volume.rampTo(0, fadeTime);
       }
-
-      // iOS Background Audio Keepalive:
-      // Deferred to AFTER the WebAudio graph is running so it doesn't consume
-      // the user gesture activation token that iOS Safari requires for Tone.start().
-      setTimeout(() => this.startIOSKeepAlive(), 500);
     } catch (err) {
       console.warn('Transport start error:', err);
     }
@@ -561,6 +589,8 @@ export class GenerativeAudioController {
         if (this.wavesPlayer && typeof this.wavesPlayer.stop === 'function') {
           try { this.wavesPlayer.stop(); } catch (e) {}
         }
+        if (this.harmonicLoop && typeof this.harmonicLoop.stop === 'function') this.harmonicLoop.stop();
+        if (this.melodicLoop && typeof this.melodicLoop.stop === 'function') this.melodicLoop.stop();
         if (this.layer1Synth && this.layer1Synth.releaseAll) {
           try { this.layer1Synth.releaseAll(); } catch (e) {}
         }
@@ -625,6 +655,18 @@ export class GenerativeAudioController {
 
     // Apply real-time mixer state
     this.applyMixerState(mixerState);
+
+    // Dynamic BPM Calculation
+    const currentBpm = calculateBpmAtTime({
+      bpmStart: 70 - (20 * currentState), // Starts slower if user is already sleepy
+      solTargetMinutes: solTarget,
+      timeMinutes: timeMinutes
+    });
+
+    const transport = Tone.getTransport ? Tone.getTransport() : Tone.Transport;
+    if (transport && transport.bpm && typeof transport.bpm.rampTo === 'function') {
+      transport.bpm.rampTo(currentBpm, 0.5, time);
+    }
 
     // 1. Calculate targets via math engine
     const entrainmentFreq = calculateEntrainmentFrequency(currentState, timeMinutes, solTarget);

@@ -29,6 +29,10 @@ export const PlayButton = () => {
       if (Tone && typeof Tone.start === 'function') {
         await Tone.start();
       }
+
+      // NEW: Synchronous HTML5 Background Audio & Media Session Hook
+      audioController.startIOSKeepAlive();
+      audioController.setupMediaSession();
     } catch (e) {
       console.warn('Tone.start() warning:', e);
     }

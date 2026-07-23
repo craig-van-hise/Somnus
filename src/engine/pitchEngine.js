@@ -62,7 +62,7 @@ export class PitchMarkovEngine {
     // Perfect 12th clearance = 19 semitones minimum
     const minAllowedMidi = layer1Midi + 19;
 
-    const candidateNotes = ['C3', 'D3', 'E3', 'G3', 'A3', 'C4', 'D4', 'E4', 'G4', 'A4', 'C5'];
+    const candidateNotes = ['G3', 'A3', 'B3', 'D4', 'E4', 'G4', 'A4', 'B4', 'D5', 'E5', 'G5'];
     const validPitches = [];
 
     for (const note of candidateNotes) {
