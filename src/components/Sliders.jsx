@@ -5,8 +5,10 @@ export const Sliders = () => {
   const {
     sessionDuration,
     currentState,
+    masterVolume,
     updateSessionDuration,
     updateCurrentState,
+    updateMasterVolume,
   } = useApp();
 
   const handleStateChange = (e) => {
@@ -62,6 +64,29 @@ export const Sliders = () => {
           <span>Awake (0.00)</span>
           <span>Drowsy (0.50)</span>
           <span>Deep Sleep (1.00)</span>
+        </div>
+      </div>
+
+      {/* Master Volume Slider */}
+      <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-5 shadow-lg space-y-3">
+        <div className="flex justify-between items-center text-xs font-sans tracking-widest text-slate-200">
+          <span className="uppercase">Master Volume</span>
+          <span className="font-mono text-emerald-300 font-bold">{masterVolume} dB</span>
+        </div>
+        <input
+          type="range"
+          data-testid="master-volume-slider"
+          min="-60"
+          max="0"
+          step="1"
+          value={masterVolume}
+          onChange={(e) => updateMasterVolume(e.target.value)}
+          className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400 focus:outline-none"
+        />
+        <div className="flex justify-between text-[10px] text-slate-400 font-mono tracking-wider">
+          <span>-60 dB</span>
+          <span>-30 dB</span>
+          <span>0 dB</span>
         </div>
       </div>
     </div>

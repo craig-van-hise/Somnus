@@ -162,11 +162,17 @@ export class GenerativeAudioController {
             this.reverbInputBus.connect(this.reverbWorklet);
           }
 
-          // Bridge Worklet -> Native Destination
-          const nativeGain = nativeContext.createGain ? nativeContext.createGain() : { gain: { value: 0.5 }, connect: () => {} };
-          if (nativeGain.gain) nativeGain.gain.value = 0.5; // -6dB headroom
-          this.reverbWorklet.connect(nativeGain);
-          nativeGain.connect(nativeContext.destination);
+          // Bridge Worklet -> Tone.js Master Bus
+          const reverbReturnNode = new Tone.Gain(0.5).connect(this.masterBus); // -6dB headroom
+          if (Tone.connect) {
+            try {
+              Tone.connect(this.reverbWorklet, reverbReturnNode);
+            } catch(e) {
+              this.reverbWorklet.connect(reverbReturnNode.input || reverbReturnNode);
+            }
+          } else {
+            this.reverbWorklet.connect(reverbReturnNode.input || reverbReturnNode);
+          }
         } else {
           throw new Error("AudioWorkletNode class not found.");
         }
@@ -328,25 +334,34 @@ export class GenerativeAudioController {
       }).connect(this.layer3Filter);
       this.layer3Synth.volume.value = -10;
 
-      // Rebuild Generative Music Sequencers
+      // Rebuild Generative Music Sequencers (Markov Root Anchored)
       try {
+        const degreeToNoteHarmonic = { 1: 'G3', 2: 'A3', 3: 'B3', 5: 'D4', 6: 'E4' };
+        const degreeToNoteMelodic = { 1: 'G4', 2: 'A4', 3: 'B4', 5: 'D5', 6: 'E5' };
+
         this.harmonicLoop = new Tone.Loop((time) => {
-          // 40% chance to play a chord/note (Ambient Sparsity)
           if (Math.random() < 0.40) {
-            const validPitches = this.pitchEngine.generateLayer2Pitches('G2'); // Returns G-Major Pentatonic array
-            const randomPitch = validPitches[Math.floor(Math.random() * validPitches.length)];
-            this.layer2Synth.triggerAttackRelease(randomPitch, "2n", time, 0.2); // 0.2 velocity
+            const currentSecs = Tone.getTransport ? Tone.getTransport().seconds : Tone.Transport.seconds || 0;
+            const degree = this.pitchEngine.generateNextDegree({
+              currentTimeMinutes: currentSecs / 60,
+              solTargetMinutes: this.currentPayload.solTarget || 20
+            });
+            const pitch = degreeToNoteHarmonic[degree] || 'G3';
+            this.layer2Synth.triggerAttackRelease(pitch, "2n", time, 0.2);
           }
-        }, "2n"); // Evaluates every half-note
+        }, "2n");
 
         this.melodicLoop = new Tone.Loop((time) => {
-          // 30% chance to play a delicate melody note
           if (Math.random() < 0.30) {
-            const validPitches = this.pitchEngine.generateLayer2Pitches('G2');
-            const randomPitch = validPitches[Math.floor(Math.random() * validPitches.length)];
-            this.layer3Synth.triggerAttackRelease(randomPitch, "4n", time, 0.15); // 0.15 velocity
+            const currentSecs = Tone.getTransport ? Tone.getTransport().seconds : Tone.Transport.seconds || 0;
+            const degree = this.pitchEngine.generateNextDegree({
+              currentTimeMinutes: currentSecs / 60,
+              solTargetMinutes: this.currentPayload.solTarget || 20
+            });
+            const pitch = degreeToNoteMelodic[degree] || 'G4';
+            this.layer3Synth.triggerAttackRelease(pitch, "4n", time, 0.15);
           }
-        }, "4n"); // Evaluates every quarter-note
+        }, "4n");
       } catch (e) {
         console.warn('Loop instantiation fallback:', e);
         this.harmonicLoop = { start: () => {}, stop: () => {} };
@@ -706,6 +721,13 @@ export class GenerativeAudioController {
         this.ch2Tremolo.frequency.rampTo(entrainmentFreq, 0.5, time);
       }
       this.ch2Tremolo.frequencyTarget = entrainmentFreq;
+    }
+
+    // 5. Global UI Master Volume
+    const globalVolume = payload.masterVolume !== undefined ? payload.masterVolume : 0;
+    const dest = Tone.getDestination ? Tone.getDestination() : Tone.Destination;
+    if (dest && dest.volume && typeof dest.volume.rampTo === 'function') {
+      dest.volume.rampTo(globalVolume, 0.5, time);
     }
   }
 

@@ -34,6 +34,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
   const [debugMode, setDebugMode] = useState(false);
   const [solTarget, setSolTarget] = useState(() => isTestBypass ? 20 : getStorageItem('solTarget', 20));
   const [isSolOverrideActive, setIsSolOverrideActive] = useState(false);
+  const [masterVolume, setMasterVolume] = useState(() => isTestBypass ? 0 : getStorageItem('masterVolume', 0));
 
   const [mixerState, setMixerState] = useState(() => isTestBypass ? {
     ch1Volume: -6,
@@ -63,12 +64,13 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
         localStorage.setItem('somnus_currentState', String(currentState));
         localStorage.setItem('somnus_solTarget', String(solTarget));
         localStorage.setItem('somnus_masterFadeTime', String(masterFadeTime));
+        localStorage.setItem('somnus_masterVolume', String(masterVolume));
         localStorage.setItem('somnus_mixerState', JSON.stringify(mixerState));
       }
     } catch (e) {
       console.warn('LocalStorage save warning:', e);
     }
-  }, [sessionDuration, currentState, solTarget, masterFadeTime, mixerState, isTestBypass]);
+  }, [sessionDuration, currentState, solTarget, masterFadeTime, masterVolume, mixerState, isTestBypass]);
 
   const updateMixerState = useCallback((updater) => {
     setMixerState((prevMixer) => {
@@ -93,6 +95,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
     currentState: isTestBypass ? 0.50 : getStorageItem('currentState', 0.50),
     solTarget: isTestBypass ? 20 : getStorageItem('solTarget', 20),
     masterFadeTime: isTestBypass ? 10 : getStorageItem('masterFadeTime', 10),
+    masterVolume: isTestBypass ? 0 : getStorageItem('masterVolume', 0),
     isSolOverrideActive: false,
     mixerState: isTestBypass ? {
       ch1Volume: -6,
@@ -114,6 +117,27 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
       lpfOverrideFreq: 2000,
     }),
   }));
+
+  const updateMasterVolume = useCallback((val) => {
+    const numericVal = parseInt(val, 10);
+    setMasterVolume(numericVal);
+    setVisualUpdateCount((prev) => prev + 1);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setEnginePayload((prev) => {
+        const next = { ...prev, masterVolume: numericVal };
+        if (onParamUpdate) {
+          onParamUpdate(next);
+        }
+        return next;
+      });
+      setPayloadUpdateCount((prev) => prev + 1);
+    }, 100);
+  }, [onParamUpdate]);
 
 
   // Visual UI counter to verify visual UI renders vs payload updates in tests
@@ -248,6 +272,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
         sessionDuration,
         currentState,
         masterFadeTime,
+        masterVolume,
         enginePayload,
         visualUpdateCount,
         payloadUpdateCount,
@@ -266,6 +291,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
         updateCurrentState,
         updateSessionDuration,
         updateMasterFadeTime,
+        updateMasterVolume,
       }}
     >
       {children}
