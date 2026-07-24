@@ -13,16 +13,16 @@ describe('PRP #32 Phase 3: Global State Context Expansion', () => {
     expect(typeof result.current.updateMasterVolume).toBe('function');
 
     act(() => {
-      result.current.updateMasterVolume(-12);
+      result.current.updateMasterVolume(50);
     });
 
-    expect(result.current.masterVolume).toBe(-12);
+    expect(result.current.masterVolume).toBe(50);
 
     act(() => {
       vi.advanceTimersByTime(150);
     });
 
-    expect(result.current.enginePayload.masterVolume).toBe(-12);
+    expect(result.current.enginePayload.masterVolume).toBe(50);
     vi.useRealTimers();
   });
 });

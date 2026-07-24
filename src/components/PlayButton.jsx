@@ -75,7 +75,10 @@ export const PlayButton = () => {
   const isResetDisabled = isLoading || sessionStatus === 'standby';
 
   return (
-    <div className="flex items-center space-x-3">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 w-full">
+      {/* Empty left column for mathematical balance */}
+      <div></div>
+
       {/* Primary Play / Pause Button */}
       <button
         type="button"
@@ -122,27 +125,29 @@ export const PlayButton = () => {
       </button>
 
       {/* Reset Session Button directly to the right */}
-      <button
-        type="button"
-        data-testid="reset-button"
-        disabled={isResetDisabled}
-        onClick={handleResetClick}
-        title="Reset Session"
-        className={`p-4 rounded-full border transition-all duration-300 shadow-lg ${
-          isResetDisabled
-            ? 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
-            : 'bg-white/10 border-white/20 text-slate-300 hover:text-white hover:bg-white/20 hover:border-white/40 active:scale-95'
-        }`}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
-      </button>
+      <div className="flex justify-start">
+        <button
+          type="button"
+          data-testid="reset-button"
+          disabled={isResetDisabled}
+          onClick={handleResetClick}
+          title="Reset Session"
+          className={`p-4 rounded-full border transition-all duration-300 shadow-lg ${
+            isResetDisabled
+              ? 'bg-white/5 border-white/10 text-white/20 cursor-not-allowed'
+              : 'bg-white/10 border-white/20 text-slate-300 hover:text-white hover:bg-white/20 hover:border-white/40 active:scale-95'
+          }`}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+        </button>
+      </div>
     </div>
   );
 };

@@ -15,6 +15,8 @@ export const SettingsModal = () => {
     updateMixerState,
     masterFadeTime,
     updateMasterFadeTime,
+    musicalKey,
+    updateMusicalKey,
   } = useApp();
 
 
@@ -24,12 +26,12 @@ export const SettingsModal = () => {
 
   return (
     <>
-      {/* Cog button fixed at bottom right */}
+      {/* Cog button fixed at top right */}
       <button
         type="button"
         data-testid="settings-cog-button"
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-slate-300 hover:text-white hover:bg-white/20 transition-all shadow-lg active:scale-95"
+        className="fixed top-6 right-6 z-40 p-3 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-slate-300 hover:text-white hover:bg-white/20 transition-all shadow-lg active:scale-95"
         aria-label="Advanced Settings"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -151,6 +153,36 @@ export const SettingsModal = () => {
                 <span>3s</span>
                 <span>16s</span>
                 <span>30s</span>
+              </div>
+            </div>
+
+            {/* Musical Key Selector */}
+            <div className="border-t border-white/10 pt-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-sans text-xs tracking-wider uppercase font-semibold text-slate-200 block">
+                    Harmonic Root Key
+                  </label>
+                  <span className="text-[10px] text-slate-400 block">Transposes music & entrainment</span>
+                </div>
+                <select
+                  value={musicalKey}
+                  onChange={(e) => updateMusicalKey(e.target.value)}
+                  className="bg-slate-800 border border-white/20 text-cyan-300 text-sm rounded-lg focus:ring-cyan-500 focus:border-cyan-500 block p-2 outline-none font-mono"
+                >
+                  <option value="C">C Major</option>
+                  <option value="C#">C# Major</option>
+                  <option value="D">D Major</option>
+                  <option value="D#">D# Major</option>
+                  <option value="E">E Major</option>
+                  <option value="F">F Major</option>
+                  <option value="F#">F# Major</option>
+                  <option value="G">G Major</option>
+                  <option value="G#">G# Major</option>
+                  <option value="A">A Major</option>
+                  <option value="A#">A# Major</option>
+                  <option value="B">B Major</option>
+                </select>
               </div>
             </div>
 

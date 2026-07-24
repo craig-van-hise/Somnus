@@ -11,7 +11,7 @@ const AppContent = () => {
   const { sessionStatus } = useApp();
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-slate-950 text-white flex flex-col justify-between items-center p-6 relative select-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-indigo-950 to-slate-950">
+    <div className="min-h-screen w-screen overflow-y-auto pb-24 bg-slate-950 text-white flex flex-col justify-between items-center p-6 relative select-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-indigo-950 to-slate-950">
       {/* Background ambient lighting effects */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -27,8 +27,10 @@ const AppContent = () => {
       </header>
 
       {/* Main Control Panel & Play Button */}
-      <main className="z-10 flex flex-col items-center justify-center space-y-10 w-full max-w-sm">
-        <PlayButton />
+      <main className="z-10 flex flex-col items-center justify-start w-full max-w-sm mt-10">
+        <div className="w-full mb-10">
+          <PlayButton />
+        </div>
         <Sliders />
       </main>
 

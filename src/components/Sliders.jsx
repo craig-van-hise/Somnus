@@ -20,9 +20,9 @@ export const Sliders = () => {
   };
 
   return (
-    <div className="w-full max-w-sm space-y-6">
+    <div className="w-full max-w-sm space-y-3">
       {/* Session Duration Slider */}
-      <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-5 shadow-lg space-y-3">
+      <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-4 shadow-lg space-y-3">
         <div className="flex justify-between items-center text-xs font-sans tracking-widest text-slate-200">
           <span className="uppercase">Session Duration</span>
           <span className="font-mono text-cyan-300 font-bold">{sessionDuration} min</span>
@@ -45,7 +45,7 @@ export const Sliders = () => {
       </div>
 
       {/* Current State Slider */}
-      <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-5 shadow-lg space-y-3">
+      <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-4 shadow-lg space-y-3">
         <div className="flex justify-between items-center text-xs font-sans tracking-widest text-slate-200">
           <span className="uppercase">Current State</span>
           <span className="font-mono text-indigo-300 font-bold">{parseFloat(currentState).toFixed(2)}</span>
@@ -68,25 +68,25 @@ export const Sliders = () => {
       </div>
 
       {/* Master Volume Slider */}
-      <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-5 shadow-lg space-y-3">
+      <div className="bg-white/10 backdrop-blur-md rounded-3xl border border-white/20 p-4 shadow-lg space-y-3">
         <div className="flex justify-between items-center text-xs font-sans tracking-widest text-slate-200">
           <span className="uppercase">Master Volume</span>
-          <span className="font-mono text-emerald-300 font-bold">{masterVolume} dB</span>
+          <span className="font-mono text-emerald-300 font-bold">{masterVolume}%</span>
         </div>
         <input
           type="range"
           data-testid="master-volume-slider"
-          min="-60"
-          max="0"
+          min="0"
+          max="100"
           step="1"
           value={masterVolume}
           onChange={(e) => updateMasterVolume(e.target.value)}
           className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer accent-emerald-400 focus:outline-none"
         />
         <div className="flex justify-between text-[10px] text-slate-400 font-mono tracking-wider">
-          <span>-60 dB</span>
-          <span>-30 dB</span>
-          <span>0 dB</span>
+          <span>0%</span>
+          <span>50%</span>
+          <span>100%</span>
         </div>
       </div>
     </div>

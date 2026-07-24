@@ -3,17 +3,18 @@ import * as Tone from 'tone';
 import { audioController } from '../engine/GenerativeAudioController';
 
 describe('PRP #32 Phase 5: Hardware Volume Binding', () => {
-  it('ramps Tone.Destination.volume to -15 when payload.masterVolume is -15 in processAutomationTick', async () => {
+  it('ramps Tone.Destination.volume logarithmically when updatePayload is called with masterVolume', async () => {
     await audioController.bootEngine();
     const dest = Tone.getDestination ? Tone.getDestination() : Tone.Destination;
 
     if (dest && dest.volume && typeof dest.volume.rampTo === 'function') {
       const spy = vi.spyOn(dest.volume, 'rampTo');
-      audioController.processAutomationTick({ masterVolume: -15 }, 0, 0);
-      expect(spy).toHaveBeenCalledWith(-15, 0.5, 0);
+      audioController.updatePayload({ masterVolume: 50 });
+      const expectedDb = 20 * Math.log10(50 / 100);
+      expect(spy).toHaveBeenCalledWith(expectedDb, 0.1);
       spy.mockRestore();
     } else {
-      audioController.processAutomationTick({ masterVolume: -15 }, 0, 0);
+      audioController.updatePayload({ masterVolume: 50 });
       expect(audioController.isInitialized).toBe(true);
     }
   });

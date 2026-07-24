@@ -1,7 +1,23 @@
 import * as Tone from 'tone';
 import { calculateEntrainmentFrequency, calculateLpfCutoff, calculateBpmAtTime } from './lifecycleRampEngine';
-import { PitchMarkovEngine } from './pitchEngine';
+import { PitchMarkovEngine, midiToNote } from './pitchEngine';
 import { globalAssetCache } from '../services/assetLoader';
+
+const TONE_KEY_MAP = {
+  'C': { rootMidi: 48, freq: 130.81 },
+  'C#': { rootMidi: 49, freq: 138.59 },
+  'D': { rootMidi: 50, freq: 146.83 },
+  'D#': { rootMidi: 51, freq: 155.56 },
+  'E': { rootMidi: 52, freq: 164.81 },
+  'F': { rootMidi: 53, freq: 174.61 },
+  'F#': { rootMidi: 54, freq: 185.00 },
+  'G': { rootMidi: 55, freq: 196.00 },
+  'G#': { rootMidi: 56, freq: 207.65 },
+  'A': { rootMidi: 57, freq: 220.00 },
+  'A#': { rootMidi: 58, freq: 233.08 },
+  'B': { rootMidi: 59, freq: 246.94 },
+};
+const PENTATONIC_OFFSETS = { 1: 0, 2: 2, 3: 4, 5: 7, 6: 9 };
 
 // Resolve Vite base path for GitHub Pages deployment
 const BASE = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL)
@@ -70,8 +86,25 @@ export class GenerativeAudioController {
 
   updatePayload(payload = {}) {
     this.currentPayload = { ...this.currentPayload, ...payload };
+
     if (payload.mixerState) {
       this.applyMixerState(payload.mixerState);
+    }
+
+    // Instant, Logarithmic Master Volume
+    if (payload.masterVolume !== undefined) {
+      const uiVal = payload.masterVolume;
+      const dest = Tone.getDestination ? Tone.getDestination() : Tone.Destination;
+
+      if (dest && dest.volume && typeof dest.volume.rampTo === 'function') {
+        if (uiVal <= 0) {
+          dest.volume.rampTo(-Infinity, 0.1);
+        } else {
+          // Map 0-100 linearly to amplitude, converted to Decibels
+          const db = 20 * Math.log10(uiVal / 100);
+          dest.volume.rampTo(db, 0.1); // Fast 100ms response
+        }
+      }
     }
   }
 
@@ -317,7 +350,6 @@ export class GenerativeAudioController {
       this.layer2Synth = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'triangle' },
         envelope: { attack: 2, decay: 1, sustain: 0.8, release: 3 },
-        detune: 35,
       }).connect(this.layer2Filter);
       this.layer2Synth.volume.value = -10;
 
@@ -330,15 +362,11 @@ export class GenerativeAudioController {
       this.layer3Synth = new Tone.PolySynth(Tone.Synth, {
         oscillator: { type: 'sine' },
         envelope: { attack: 1.5, decay: 1, sustain: 0.7, release: 2.5 },
-        detune: 35,
       }).connect(this.layer3Filter);
       this.layer3Synth.volume.value = -10;
 
       // Rebuild Generative Music Sequencers (Markov Root Anchored)
       try {
-        const degreeToNoteHarmonic = { 1: 'G3', 2: 'A3', 3: 'B3', 5: 'D4', 6: 'E4' };
-        const degreeToNoteMelodic = { 1: 'G4', 2: 'A4', 3: 'B4', 5: 'D5', 6: 'E5' };
-
         this.harmonicLoop = new Tone.Loop((time) => {
           if (Math.random() < 0.40) {
             const currentSecs = Tone.getTransport ? Tone.getTransport().seconds : Tone.Transport.seconds || 0;
@@ -346,7 +374,9 @@ export class GenerativeAudioController {
               currentTimeMinutes: currentSecs / 60,
               solTargetMinutes: this.currentPayload.solTarget || 20
             });
-            const pitch = degreeToNoteHarmonic[degree] || 'G3';
+            const key = this.currentPayload.musicalKey || 'D';
+            const rootMidi = TONE_KEY_MAP[key]?.rootMidi || 50;
+            const pitch = midiToNote(rootMidi + PENTATONIC_OFFSETS[degree]);
             this.layer2Synth.triggerAttackRelease(pitch, "2n", time, 0.2);
           }
         }, "2n");
@@ -358,7 +388,10 @@ export class GenerativeAudioController {
               currentTimeMinutes: currentSecs / 60,
               solTargetMinutes: this.currentPayload.solTarget || 20
             });
-            const pitch = degreeToNoteMelodic[degree] || 'G4';
+            const key = this.currentPayload.musicalKey || 'D';
+            const rootMidi = TONE_KEY_MAP[key]?.rootMidi || 50;
+            // Melodic layer plays one octave higher (+12)
+            const pitch = midiToNote(rootMidi + PENTATONIC_OFFSETS[degree] + 12);
             this.layer3Synth.triggerAttackRelease(pitch, "4n", time, 0.15);
           }
         }, "4n");
@@ -699,8 +732,9 @@ export class GenerativeAudioController {
       this.masterLpf.frequencyTarget = lpfTarget;
     }
 
-    // 3. Channel 1 Binaural Frequencies (base = 150Hz)
-    const baseFreq = 150;
+    // 3. Channel 1 Binaural Frequencies
+    const currentKey = payload.musicalKey || 'D';
+    const baseFreq = TONE_KEY_MAP[currentKey]?.freq || 146.83;
     const leftFreq = baseFreq - entrainmentFreq / 2;
     const rightFreq = baseFreq + entrainmentFreq / 2;
 
@@ -723,12 +757,6 @@ export class GenerativeAudioController {
       this.ch2Tremolo.frequencyTarget = entrainmentFreq;
     }
 
-    // 5. Global UI Master Volume
-    const globalVolume = payload.masterVolume !== undefined ? payload.masterVolume : 0;
-    const dest = Tone.getDestination ? Tone.getDestination() : Tone.Destination;
-    if (dest && dest.volume && typeof dest.volume.rampTo === 'function') {
-      dest.volume.rampTo(globalVolume, 0.5, time);
-    }
   }
 
 

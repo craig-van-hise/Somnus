@@ -33,8 +33,9 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
   const [audioSuspended, setAudioSuspended] = useState(false);
   const [debugMode, setDebugMode] = useState(false);
   const [solTarget, setSolTarget] = useState(() => isTestBypass ? 20 : getStorageItem('solTarget', 20));
+  const [musicalKey, setMusicalKey] = useState(() => isTestBypass ? 'D' : getStorageItem('musicalKey', 'D'));
   const [isSolOverrideActive, setIsSolOverrideActive] = useState(false);
-  const [masterVolume, setMasterVolume] = useState(() => isTestBypass ? 0 : getStorageItem('masterVolume', 0));
+  const [masterVolume, setMasterVolume] = useState(() => isTestBypass ? 100 : getStorageItem('masterVolume', 100));
 
   const [mixerState, setMixerState] = useState(() => isTestBypass ? {
     ch1Volume: -6,
@@ -63,6 +64,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
         localStorage.setItem('somnus_sessionDuration', String(sessionDuration));
         localStorage.setItem('somnus_currentState', String(currentState));
         localStorage.setItem('somnus_solTarget', String(solTarget));
+        localStorage.setItem('somnus_musicalKey', String(musicalKey));
         localStorage.setItem('somnus_masterFadeTime', String(masterFadeTime));
         localStorage.setItem('somnus_masterVolume', String(masterVolume));
         localStorage.setItem('somnus_mixerState', JSON.stringify(mixerState));
@@ -70,7 +72,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
     } catch (e) {
       console.warn('LocalStorage save warning:', e);
     }
-  }, [sessionDuration, currentState, solTarget, masterFadeTime, masterVolume, mixerState, isTestBypass]);
+  }, [sessionDuration, currentState, solTarget, musicalKey, masterFadeTime, masterVolume, mixerState, isTestBypass]);
 
   const updateMixerState = useCallback((updater) => {
     setMixerState((prevMixer) => {
@@ -94,8 +96,9 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
     sessionDuration: isTestBypass ? 60 : getStorageItem('sessionDuration', 60),
     currentState: isTestBypass ? 0.50 : getStorageItem('currentState', 0.50),
     solTarget: isTestBypass ? 20 : getStorageItem('solTarget', 20),
+    musicalKey: isTestBypass ? 'D' : getStorageItem('musicalKey', 'D'),
     masterFadeTime: isTestBypass ? 10 : getStorageItem('masterFadeTime', 10),
-    masterVolume: isTestBypass ? 0 : getStorageItem('masterVolume', 0),
+    masterVolume: isTestBypass ? 100 : getStorageItem('masterVolume', 100),
     isSolOverrideActive: false,
     mixerState: isTestBypass ? {
       ch1Volume: -6,
@@ -263,6 +266,17 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
     }));
   }, []);
 
+  const updateMusicalKey = useCallback((key) => {
+    setMusicalKey(key);
+    setEnginePayload((prev) => {
+      const next = { ...prev, musicalKey: key };
+      if (onParamUpdate) {
+        onParamUpdate(next);
+      }
+      return next;
+    });
+  }, [onParamUpdate]);
+
   return (
     <AppContext.Provider
       value={{
@@ -273,6 +287,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
         currentState,
         masterFadeTime,
         masterVolume,
+        musicalKey,
         enginePayload,
         visualUpdateCount,
         payloadUpdateCount,
@@ -288,6 +303,7 @@ export const AppProvider = ({ children, customPreloadPromise = null, onParamUpda
         setMixerState,
         updateMixerState,
         updateSolTarget,
+        updateMusicalKey,
         updateCurrentState,
         updateSessionDuration,
         updateMasterFadeTime,
